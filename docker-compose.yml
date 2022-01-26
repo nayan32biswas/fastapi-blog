@@ -1,0 +1,44 @@
+version: "3.7"
+
+# environment
+x-volumes: &env-volume
+  ALLOWED_HOSTS: "localhost,127.0.0.1"
+  SECRET_KEY: "uwqr823y98ruwhnsenjfuchrbgyu2oriqwnefueiyucnewc"
+
+  MONGO_USER: "root"
+  MONGO_PASSWORD: "password"
+  MONGO_HOST: "db"
+
+services:
+  api:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+    image: nayan32biswas/fastapi_blog:latest
+    container_name: fastapi_blog_server
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    ports:
+      - 8000:8000
+    environment:
+      <<: *env-volume
+    volumes:
+      - ./:/app/server/
+    depends_on:
+      - db
+    networks:
+      - fastapi_blog-backend-tier
+
+  db:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+
+volumes:
+  fastapi_blog-db:
+    driver: local
+
+networks:
+  fastapi_blog-backend-tier:
+    driver: bridge

@@ -5,9 +5,7 @@ x-volumes: &env-volume
   ALLOWED_HOSTS: "localhost,127.0.0.1"
   SECRET_KEY: "uwqr823y98ruwhnsenjfuchrbgyu2oriqwnefueiyucnewc"
 
-  MONGO_USER: "root"
-  MONGO_PASSWORD: "password"
-  MONGO_HOST: "db"
+  MONGO_HOST: "mongodb://root:password@db:27017/"
 
 services:
   api:
@@ -16,7 +14,7 @@ services:
       dockerfile: ./Dockerfile
     image: nayan32biswas/fastapi_blog:latest
     container_name: fastapi_blog_server
-    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     ports:
       - 8000:8000
     environment:
@@ -31,12 +29,28 @@ services:
   db:
     image: mongo
     restart: always
+    container_name: fastapi_blog_db
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_ROOT_PASSWORD: password
+    ports:
+      - 27017:27017
+    volumes:
+      - fastapi_blog-db:/data/db
+
+  redis:
+    image: library/redis:5.0
+    container_name: fastapi_blog_redis
+    restart: unless-stopped
+    networks:
+      - fastapi_blog-backend-tier
+    volumes:
+      - fastapi_blog-redis:/data
 
 volumes:
   fastapi_blog-db:
+    driver: local
+  fastapi_blog-redis:
     driver: local
 
 networks:

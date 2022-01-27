@@ -102,24 +102,20 @@ class UserInDB(User):
 
 
 def verify_password(plain_password, hashed_password):
-    print("\n\nplain_password:", plain_password)
     return pwd_context.verify(plain_password, hashed_password)
 
 
 def get_password_hash(password):
-    print("\n\nget_password_hash:", password)
     return pwd_context.hash(password)
 
 
 def get_user(db, username: str):
-    print("\n\nget_user:", username)
     if username in db:
         user_dict = db[username]
         return UserInDB(**user_dict)
 
 
 def authenticate_user(fake_db, username: str, password: str):
-    print("\n\nauthenticate_user", username)
     user = get_user(fake_db, username)
     if not user:
         return False
@@ -129,7 +125,6 @@ def authenticate_user(fake_db, username: str, password: str):
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    print("\n\ncreate_access_token", expires_delta)
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -141,7 +136,6 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
-    print("\n\nget_current_user", token)
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -162,7 +156,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)):
-    print("\n\nget_current_active_user")
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
@@ -171,7 +164,6 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
 @app.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     # Extend or reimplement OAuth2PasswordRequestForm to change authentication format or add additional fields
-    print("\n\nlogin_for_access_token")
     user = authenticate_user(fake_users_db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(

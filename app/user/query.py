@@ -1,9 +1,9 @@
-from .schema import UserInDB
+from .schemas import UserInDB
 
-from ..db import fake_users_db
+from .models import User
 
 
 def get_user(username: str):
-    if username in fake_users_db:
-        user_dict = fake_users_db[username]
-        return UserInDB(**user_dict)
+    user = User.objects(username=username).first()
+    if user:
+        return UserInDB(**user.to_mongo())

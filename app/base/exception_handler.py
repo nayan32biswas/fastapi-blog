@@ -1,11 +1,5 @@
-from fastapi import (
-    FastAPI,
-    Request,
-)
+from fastapi import Request
 from fastapi.responses import JSONResponse
-
-
-app = FastAPI()
 
 
 class UnicornException(Exception):
@@ -13,7 +7,6 @@ class UnicornException(Exception):
         self.name = name
 
 
-@app.exception_handler(UnicornException)
 async def unicorn_exception_handler(request: Request, exc: UnicornException):
     return JSONResponse(
         status_code=418,

@@ -15,7 +15,7 @@ from fastapi import (
 )
 
 
-from .schema import PostIn, PostOut
+from .schemas import PostIn, PostOut
 
 # , PostForm
 

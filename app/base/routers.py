@@ -1,4 +1,5 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, File, status, UploadFile
+from app.auth.dependencies import get_authenticated_user
 
 from app.user.models import User
 
@@ -16,3 +17,15 @@ def home():
         "message": "Hello World",
         "users": users,
     }
+
+
+@router.post("/upload-image/")
+async def create_upload_file(
+    file: UploadFile = File(...),
+    user: User = Depends(get_authenticated_user),
+):
+    print(user)
+    if not file:
+        return {"message": "No upload file sent"}
+    else:
+        return {"filename": file.filename}

@@ -2,19 +2,19 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, Field
 
-from fastapi import File, UploadFile
 
-
-class PostIn(BaseModel):
+class BasePost(BaseModel):
     name: str = Field(..., min_length=5, max_length=250)
-    description: Optional[str] = None
-    published_at: datetime = None
-    number: int = 0
+    published_at: Optional[datetime] = None
+    is_publish: Optional[bool] = False
 
 
-class PostOut(PostIn):
-    id: int = None
+class PostForm(BasePost):
+    content: str
 
 
-class PostForm(PostIn):
-    image: UploadFile = File(...)
+class PostOut(PostForm):
+    id: Optional[str] = None
+
+    class Config:
+        orm_mode = True

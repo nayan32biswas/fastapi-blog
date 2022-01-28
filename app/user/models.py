@@ -1,8 +1,17 @@
 from enum import Enum
 from datetime import datetime
 
-from mongoengine import Document, StringField, DateTimeField, EmailField, BooleanField
-from mongoengine import EnumField
+from mongoengine import (
+    BooleanField,
+    Document,
+    DateTimeField,
+    EmailField,
+    # EmbeddedDocument,
+    EnumField,
+    ImageField,
+    # ObjectIdField,
+    StringField,
+)
 
 
 class UserRoles(Enum):
@@ -23,3 +32,10 @@ class User(Document):
 
     last_login = DateTimeField(default=datetime.utcnow)
     password = StringField(max_length=128)
+    image = ImageField(required=True)
+
+
+# class EmbeddedUser(EmbeddedDocument):
+#     user_id = ObjectIdField()
+#     username = StringField(max_length=150, required=True)
+#     image_url = StringField()

@@ -6,7 +6,6 @@ from fastapi import (
     APIRouter,
     File,
     Form,
-    Header,
     HTTPException,
     Path,
     Query,
@@ -14,34 +13,10 @@ from fastapi import (
     UploadFile,
 )
 
-
-from .schemas import PostIn, PostOut
-
-# , PostForm
-
-
-async def auth_check(user_agent: Optional[str] = Header(None)):
-    decoded_data = user_agent.split(" ")
-    return {
-        "user": decoded_data,
-    }
-
-
-class Token:
-    def __init__(self, token: Optional[str] = Header(None)):
-        self.token: str = ""
-        if False:
-            raise HTTPException(status_code=400, detail="X-Token header invalid")
-
-
-class Auth:
-    def __init__(
-        self, user_agent: Optional[str] = Header(None), token: Token = Depends(Token)
-    ):
-        if token.token is None:
-            self.user = None
-        else:
-            self.user: list[str] = user_agent.split(" ")
+from app.auth.dependencies import get_authenticated_user
+from app.user.models import User
+from .models import Post
+from .schemas import PostForm, PostOut
 
 
 router = APIRouter()
@@ -53,11 +28,13 @@ router = APIRouter()
     status_code=status.HTTP_201_CREATED,
 )
 def post_create(
-    post: PostIn,
-    # auth: Auth = Depends(Auth),
-    auth: Auth = Depends(),
+    post: PostForm,
+    user: User = Depends(get_authenticated_user),
 ):
-    print(auth, auth.user)
+    print(post)
+    print(user)
+    print(user.username)
+    post = Post(**post.dict())
     return post
 
 
@@ -108,7 +85,7 @@ def post_details(
     *,
     post_id: int = Path(0, ge=0, le=1000, title="Post ID"),
     query: str,
-    user: dict = Depends(auth_check),
+    user: User = Depends(get_authenticated_user),
 ):
     # By adding * you can order parameters
     print(user)
@@ -121,9 +98,3 @@ def post_details(
     return {"id": post_id, "description": f"Post details of '{post_id}'"}
 
 
-@router.post("/upload-image/")
-async def create_upload_file(file: UploadFile = None):
-    if not file:
-        return {"message": "No upload file sent"}
-    else:
-        return {"filename": file.filename}

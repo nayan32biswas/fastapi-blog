@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from mongoengine import connect
 
 from app.base import routers as base_routers
 from app.auth import routers as auth_routers
@@ -11,11 +12,13 @@ from app.base.exception_handler import UnicornException, unicorn_exception_handl
 from app.base.middleware import add_process_time_header
 
 from app.base.config import ALLOWED_HOSTS
-
+from app.base.config import DB_URL
 
 app = FastAPI()
 # Global dependency
 # app = FastAPI(dependencies=[Depends(verify_token), Depends(verify_key)])
+
+connect(host=DB_URL)
 
 
 app.include_router(base_routers.router, tags=["default"])

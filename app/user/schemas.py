@@ -3,12 +3,12 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-class User(BaseModel):
+class UserBase(BaseModel):
     username: str
-    email: Optional[str] = None
-    full_name: Optional[str] = None
-    disabled: Optional[bool] = None
+    email: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
 
 
-class UserInDB(User):
-    hashed_password: str
+class UserCreate(UserBase):
+    password: str

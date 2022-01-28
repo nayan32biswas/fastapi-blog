@@ -12,35 +12,35 @@ from app.base.config import (
     SECRET_KEY,
     ALGORITHM,
 )
-from app.user.schemas import User
-from app.user.query import get_user
+from app.user.models import User
 from .schemas import TokenData
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+credentials_exception = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Could not validate credentials",
+    headers={"WWW-Authenticate": "Bearer"},
+)
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+
+async def get_authenticated_token(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
+        username: str = payload.get("username")
         if username is None:
             raise credentials_exception
         token_data = TokenData(username=username)
     except JWTError:
         raise credentials_exception
-    user = get_user(username=token_data.username)
+    return token_data
+
+
+async def get_authenticated_user(token_data: User = Depends(get_authenticated_token)):
+    user = User.objects(username=token_data.username).first()
     if user is None:
         raise credentials_exception
-    return user
-
-
-async def get_current_active_user(current_user: User = Depends(get_current_user)):
-    if current_user.disabled:
+    if user.is_active is False:
         raise HTTPException(status_code=400, detail="Inactive user")
-    return current_user
+    return user

@@ -66,26 +66,26 @@ def update_post(
     name: str = Form(None),
     content: Optional[str] = Form(None),
     published_at: datetime = Form(None),
-    is_publish: bool = Form(False),
-    image: UploadFile = File(None),
+    is_publish: bool = Form(None),
+    image: Optional[UploadFile] = None,
     user: User = Depends(get_authenticated_user),
 ):
     post = get_object_or_404(Post, id=post_id)
     if user != post.user:
-        print(type(user), type(post.user))
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    if image:
-        image_path = save_image(image, folder="post")
-
-    post = Post(
-        user=user,
-        name=name,
-        content=content,
-        published_at=published_at,
-        is_publish=is_publish,
-        image=image_path,
-    )
-    post.save()
+    update_data = {}
+    if image and image.filename:
+        update_data["image"] = save_image(image, folder="post")
+    if name is not None:
+        update_data["name"] = name
+    if content is not None:
+        update_data["content"] = content
+    if published_at is not None:
+        update_data["published_at"] = published_at
+    if is_publish is not None:
+        update_data["is_publish"] = is_publish
+    post.update(**update_data)
+    post = get_object_or_404(Post, id=post_id)
     return post._data
 
 
@@ -110,17 +110,17 @@ def fetch_posts(
     _: Optional[str] = Query(None, include_in_schema=False),
 ):
     offset = (page - 1) * limit
+    print(query)
+    print(order_by)
     search_dict = {}
-    order_by_dict = {}
+    order_by_dict = []
     if user_id:
         search_dict["user_id"] = user_id
-    if query is not None:
-        search_dict["name__icontains"] = query
+    # if query is not None:
+    #     search_dict["name__icontains"] = query
     if order_by:
         pass
-    posts = (
-        Post.objects(**search_dict).order_by(**order_by_dict).skip(offset).limit(limit)
-    )
+    posts = Post.objects(**search_dict).order_by(order_by_dict).skip(offset).limit(limit)
     return {"results": [PostListOut(**post._data) for post in posts]}
 
 

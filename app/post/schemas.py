@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, Field
 
-from app.base.types import PydanticObjectId
+from app.base.types import ObjectIdStr
 
 
 class BasePost(BaseModel):
@@ -17,14 +17,14 @@ class PostForm(BasePost):
 
 
 class PostListOut(BasePost):
-    id: PydanticObjectId
+    id: ObjectIdStr
 
     class Config:
         orm_mode = True
 
 
 class PostDetailsOut(BasePost):
-    id: PydanticObjectId
+    id: ObjectIdStr
     content: str
 
     class Config:

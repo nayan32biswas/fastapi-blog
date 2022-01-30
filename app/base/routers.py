@@ -1,5 +1,9 @@
-from fastapi import APIRouter, Depends, File, status, UploadFile
-from app.auth.dependencies import get_authenticated_user
+import os
+from fastapi import APIRouter, Depends, File, status, UploadFile, Request, HTTPException
+from fastapi.responses import FileResponse
+from app.auth.dependencies import get_authenticated_token
+from app.base.config import MEDIA_ROOT
+from app.base.utils import save_image
 
 from app.user.models import User
 
@@ -7,10 +11,7 @@ from app.user.models import User
 router = APIRouter()
 
 
-@router.get(
-    "/",
-    status_code=status.HTTP_200_OK,
-)
+@router.get("/", status_code=status.HTTP_200_OK)
 def home():
     users = [(user.name, user.username) for user in User.objects.all()]
     return {
@@ -20,12 +21,24 @@ def home():
 
 
 @router.post("/upload-image/")
-async def create_upload_file(
-    file: UploadFile = File(...),
-    user: User = Depends(get_authenticated_user),
+async def create_upload_image(
+    image: UploadFile = File(...),
+    _: User = Depends(get_authenticated_token),
 ):
-    print(user)
-    if not file:
-        return {"message": "No upload file sent"}
+    image_path = save_image(image, folder="image")
+    return image_path
+
+
+# @router.get("/media/{folder}/{date}/{imagename}")
+# async def get_image(folder: str, date: str, imagename: str):
+#     return FileResponse(f"{MEDIA_ROOT}/{folder}/{date}/{imagename}")
+
+
+@router.get("/media/{file_path:path}")
+async def get_image(request: Request, file_path: str):
+    file_path = f"{MEDIA_ROOT}/{file_path}"
+
+    if os.path.isfile(file_path):
+        return FileResponse(file_path)
     else:
-        return {"filename": file.filename}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)

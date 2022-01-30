@@ -7,7 +7,6 @@ from mongoengine import (
     Document,
     EmbeddedDocument,
     EmbeddedDocumentField,
-    ImageField,
     ListField,
     ReferenceField,
     StringField,
@@ -28,7 +27,7 @@ class Post(Document):
 
     name = StringField(max_length=512, required=True)
     content = StringField(required=True)
-    cover_image = ImageField(required=True)
+    image = StringField()
 
     published_at = DateTimeField()
     is_publish = BooleanField(default=True)

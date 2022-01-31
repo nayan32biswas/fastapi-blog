@@ -1,8 +1,22 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, Field
 
 from app.base.types import ObjectIdStr
+from app.user.schemas import MinimalUser
+
+
+class BaseComment(BaseModel):
+    content: str
+
+
+class CommentOut(BaseComment):
+    id: ObjectIdStr
+    timestamp: datetime
+    user: MinimalUser
+
+    class Config:
+        orm_mode = True
 
 
 class BasePost(BaseModel):
@@ -26,6 +40,8 @@ class PostListOut(BasePost):
 class PostDetailsOut(BasePost):
     id: ObjectIdStr
     content: str
+    comments: List[CommentOut]
+    user: MinimalUser
 
     class Config:
         orm_mode = True

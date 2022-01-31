@@ -16,8 +16,8 @@ from app.auth.dependencies import get_authenticated_user
 from app.base.utils import get_object_or_404, save_image
 from app.user.models import User
 
-from .models import Post
-from .schemas import PostListOut, PostDetailsOut
+from .models import Comment, Post
+from .schemas import CommentOut, PostListOut, PostDetailsOut
 
 
 router = APIRouter()
@@ -128,3 +128,17 @@ def fetch_posts(
 def fetch_post_details(post_id: str):
     post = get_object_or_404(Post, id=post_id)
     return post
+
+
+@router.post("/api/v1/posts/{post_id}/", response_model=CommentOut)
+def create_post_comment(
+    post_id: str,
+    content: str = Form(...),
+    user: User = Depends(get_authenticated_user),
+):
+    post = get_object_or_404(Post, id=post_id)
+    comment = Comment(user=user, content=content)
+    post.update(push__comments=comment)
+    # Post.objects(id=post_id).update_one(push__comments=comment)
+    comment.user = user
+    return comment

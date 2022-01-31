@@ -12,3 +12,13 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+
+
+class MinimalUser(BaseModel):
+    username: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    image: Optional[str] = ""
+
+    class Config:
+        orm_mode = True

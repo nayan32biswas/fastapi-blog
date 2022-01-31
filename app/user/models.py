@@ -8,7 +8,6 @@ from mongoengine import (
     EmailField,
     # EmbeddedDocument,
     EnumField,
-    ImageField,
     # ObjectIdField,
     StringField,
 )
@@ -32,7 +31,7 @@ class User(Document):
 
     last_login = DateTimeField(default=datetime.utcnow)
     password = StringField(max_length=128)
-    image = ImageField(required=True)
+    image = StringField()
 
 
 # class EmbeddedUser(EmbeddedDocument):

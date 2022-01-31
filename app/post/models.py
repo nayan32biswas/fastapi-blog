@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from bson.objectid import ObjectId
 from mongoengine import (
     BooleanField,
     CASCADE,
@@ -8,12 +9,14 @@ from mongoengine import (
     EmbeddedDocument,
     EmbeddedDocumentField,
     ListField,
+    ObjectIdField,
     ReferenceField,
     StringField,
 )
 
 
 class Comment(EmbeddedDocument):
+    id = ObjectIdField(required=True, default=ObjectId)
     childs = EmbeddedDocumentField("Comment")
     user = ReferenceField("User", required=True)
 

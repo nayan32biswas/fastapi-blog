@@ -72,7 +72,7 @@ def update_post(
 ):
     post = get_object_or_404(Post, id=post_id)
     if user != post.user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
     update_data = {}
     if image and image.filename:
         update_data["image"] = save_image(image, folder="post")
@@ -141,4 +141,42 @@ def create_post_comment(
     post.update(push__comments=comment)
     # Post.objects(id=post_id).update_one(push__comments=comment)
     comment.user = user
+    return comment
+
+
+@router.put("/api/v1/posts/{post_id}/{comment_id}/", response_model=CommentOut)
+def update_comment(
+    post_id: str,
+    comment_id: str,
+    content: str = Form(...),
+    user: User = Depends(get_authenticated_user),
+):
+    post = get_object_or_404(
+        Post, id=post_id, comments__match={"id": comment_id, "user": user.id}
+    )
+    print(post)
+    print(dir(post))
+    print(post._data)
+    if user != post.user:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    comment = Comment(user=user, content=content)
+    # post.update(push__comments=comment)
+    # # Post.objects(id=post_id).update_one(push__comments=comment)
+    # comment.user = user
+    return comment
+
+
+@router.post("/api/v1/posts/{post_id}/child/", response_model=CommentOut)
+def create_child_comment(
+    post_id: str,
+    comment_ids: List[str] = Query(...),
+    content: str = Form(...),
+    user: User = Depends(get_authenticated_user),
+):
+    print(comment_ids)
+    post = get_object_or_404(Post, id=post_id)
+    comment = Comment(user=user, content=content)
+
+    post.update(**{"set__comments": comment})
+    # comment.user = user
     return comment

@@ -32,6 +32,7 @@ class PostForm(BasePost):
 
 class PostListOut(BasePost):
     id: ObjectIdStr
+    user: MinimalUser
 
     class Config:
         orm_mode = True

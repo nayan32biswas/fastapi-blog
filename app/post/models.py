@@ -15,16 +15,6 @@ from mongoengine import (
 )
 
 
-class Comment(EmbeddedDocument):
-    id = ObjectIdField(required=True, default=ObjectId)
-    childs = EmbeddedDocumentField("Comment")
-    user = ReferenceField("User", required=True)
-
-    content = StringField(required=True)
-
-    timestamp = DateTimeField(default=datetime.utcnow)
-
-
 class Post(Document):
     user = ReferenceField("User", reverse_delete_rule=CASCADE, required=True)
 
@@ -38,4 +28,22 @@ class Post(Document):
     created_at = DateTimeField(default=datetime.utcnow)
     updated_at = DateTimeField(default=datetime.utcnow)
 
-    comments = ListField(EmbeddedDocumentField(Comment))
+
+class EmbeddedComment(EmbeddedDocument):
+    id = ObjectIdField(default=ObjectId, required=True)
+    user = ReferenceField("User", required=True)
+    content = StringField(required=True)
+
+    created_at = DateTimeField(default=datetime.utcnow)
+    updated_at = DateTimeField(default=datetime.utcnow)
+
+
+class Comment(Document):
+    user = ReferenceField("User", reverse_delete_rule=CASCADE, required=True)
+    post = ReferenceField("Post", reverse_delete_rule=CASCADE, required=True)
+    childs = ListField(EmbeddedDocumentField("EmbeddedComment"))
+
+    content = StringField(required=True)
+
+    created_at = DateTimeField(default=datetime.utcnow)
+    updated_at = DateTimeField(default=datetime.utcnow)

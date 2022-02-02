@@ -1,3 +1,4 @@
+# -e git+https://github.com/MongoEngine/mongoengine.git@9711df0d4b601981bf639e53a2c893557b7c0db7#egg=mongoengine
 anyio==3.5.0
 asgiref==3.5.0
 bcrypt==3.2.0

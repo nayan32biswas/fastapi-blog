@@ -6,14 +6,25 @@ from app.base.types import ObjectIdStr
 from app.user.schemas import MinimalUser
 
 
+class EmbedeComment(BaseModel):
+    # id: ObjectIdStr # showing error
+    user: MinimalUser
+    content: str
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
 class BaseComment(BaseModel):
     content: str
 
 
 class CommentOut(BaseComment):
-    id: ObjectIdStr
-    timestamp: datetime
+    # id: ObjectIdStr # showing error
     user: MinimalUser
+    childs: Optional[List[EmbedeComment]]
+    created_at: datetime
 
     class Config:
         orm_mode = True
@@ -41,7 +52,7 @@ class PostListOut(BasePost):
 class PostDetailsOut(BasePost):
     id: ObjectIdStr
     content: str
-    comments: List[CommentOut]
+    comments: Optional[List[CommentOut]]
     user: MinimalUser
 
     class Config:

@@ -20,7 +20,7 @@ from app.auth.dependencies import get_authenticated_user
 from app.base.utils import get_object_or_404, save_image
 from app.user.models import User
 
-from .models import Comment, Post
+from .models import Comment, EmbeddedComment, Post
 from .schemas import CommentOut, PostListOut, PostDetailsOut
 
 
@@ -61,7 +61,7 @@ def create_post(
         image=image_path,
     )
     post.save()
-    return post._data
+    return post
 
 
 @router.put("/api/v1/posts/{post_id}/", response_model=PostDetailsOut)
@@ -90,7 +90,7 @@ def update_post(
         update_data["is_publish"] = is_publish
     post.update(**update_data)
     post = get_object_or_404(Post, id=post_id)
-    return post._data
+    return post
 
 
 @router.get("/api/v1/posts/", status_code=status.HTTP_200_OK)
@@ -127,8 +127,8 @@ def fetch_posts(
         .order_by(order_by_dict)
         .skip(offset)
         .limit(limit)
-        .fields(comments=0)  # exclude comments field
         .select_related(max_depth=1)
+        # .fields(comments=0)  # exclude comments field
     )
     return {"results": [PostListOut.from_orm(post) for post in posts]}
 
@@ -136,7 +136,29 @@ def fetch_posts(
 @router.get("/api/v1/posts/{post_id}/", response_model=PostDetailsOut)
 def fetch_post_details(post_id: str):
     post = get_object_or_404(Post, id=post_id)
+    print("\n\ndata")
+    print(Comment.objects(post=post_id))
+    for comment in Comment.objects(post=post_id):
+        print(comment._data)
+    post.comments = [
+        CommentOut.from_orm(comment) for comment in Comment.objects(post=post_id)
+    ]
+    # print(post.comments)
     return post
+
+
+@router.delete(
+    "/api/v1/posts/{post_id}/",
+    status_code=status.HTTP_200_OK,
+)
+def delete_post(
+    post_id: str,
+    user: User = Depends(get_authenticated_user),
+):
+    post = get_object_or_404(Post, id=post_id, user=user)
+    post.delete()
+
+    return {"message": "Delete"}
 
 
 @router.post("/api/v1/posts/{post_id}/", response_model=CommentOut)
@@ -146,10 +168,9 @@ def create_post_comment(
     user: User = Depends(get_authenticated_user),
 ):
     post = get_object_or_404(Post, id=post_id)
-    comment = Comment(user=user, content=content)
-    post.update(push__comments=comment)
-    # Post.objects(id=post_id).update_one(push__comments=comment)
-    comment.user = user
+    comment = Comment(user=user, post=post, content=content)
+    comment.save()
+
     return comment
 
 
@@ -160,54 +181,156 @@ def update_comment(
     content: str = Form(...),
     user: User = Depends(get_authenticated_user),
 ):
-    _ = get_object_or_404(
-        Post, id=post_id, comments__match={"id": comment_id, "user": user.id}
+    comment = get_object_or_404(Comment, id=comment_id, post=post_id, user=user)
+    comment.content = content
+    comment.updated_at = datetime.utcnow()
+    comment.save()
+    comment.reload()
+
+    return CommentOut.from_orm(comment)
+
+
+@router.delete(
+    "/api/v1/posts/{post_id}/{comment_id}/",
+    status_code=status.HTTP_200_OK,
+)
+def delete_comment(
+    post_id: str,
+    comment_id: str,
+    user: User = Depends(get_authenticated_user),
+):
+    comment = get_object_or_404(
+        Comment,
+        id=comment_id,
+        post=post_id,
+        user=user,
     )
+    comment.delete()
 
-    Post.objects(
-        __raw__={
-            "_id": ObjectId(post_id),
-            "comments": {"$elemMatch": {"id": ObjectId(comment_id)}},
-        }
-    ).update_one(
-        __raw__={
-            "$set": {
-                "comments.$.content": content,
-                "comments.$.timestamp": datetime.utcnow(),
-            }
-        }
-    )
-    # comment = Post.objects(__raw__={"_id": ObjectId(post_id)}).filter(
-    #     __raw__={"comments": {"$elemMatch": {"id": ObjectId(comment_id)}}}
-    # )
-
-    # data = Post.objects.exec_js(
-    #     """
-    #     function(text) {
-    #         var comments = [];
-    #         return comments;
-    #     }
-    #     """
-    # )
-    # print(data)
-
-    # comment = Post.objects(id=post_id).fields(name=1, comments=0).first()
-    # print("comment: ", comment._data)
-
-    return "Updated Comment"
+    return {"message": "Delete"}
 
 
-@router.post("/api/v1/posts/{post_id}/child/", response_model=CommentOut)
+@router.post(
+    "/api/v1/posts/{post_id}/{comment_id}/child/",
+    response_model=CommentOut,
+)
 def create_child_comment(
     post_id: str,
-    comment_ids: List[str] = Query(...),
+    comment_id: str,
     content: str = Form(...),
     user: User = Depends(get_authenticated_user),
 ):
-    print(comment_ids)
-    post = get_object_or_404(Post, id=post_id)
-    comment = Comment(user=user, content=content)
+    comment = get_object_or_404(Comment, id=comment_id, post=post_id, user=user)
+    child_comment = EmbeddedComment(user=user, content=content)
+    comment.update(push__childs=child_comment)
+    return CommentOut.from_orm(child_comment)
 
-    post.update(**{"set__comments": comment})
-    # comment.user = user
-    return comment
+
+@router.put(
+    "/api/v1/posts/{post_id}/{comment_id}/child/{child_comment_id}/",
+    status_code=status.HTTP_200_OK,
+    response_model=CommentOut,
+)
+def update_child_comment(
+    post_id: str,
+    comment_id: str,
+    child_comment_id: str,
+    content: str = Form(...),
+    user: User = Depends(get_authenticated_user),
+):
+    _ = get_object_or_404(
+        Comment,
+        id=comment_id,
+        post=post_id,
+        childs__user=user,
+        childs__id=child_comment_id,
+    )
+
+    # Comment.objects(
+    #     __raw__={
+    #         "_id": ObjectId(comment_id),
+    #         "post": ObjectId(post_id),
+    #         "childs": {"$elemMatch": {"id": ObjectId(child_comment_id)}},
+    #     }
+    # ).update_one(
+    #     __raw__={
+    #         "$set": {
+    #             "childs.$.content": content,
+    #             "childs.$.updated_at": datetime.utcnow(),
+    #         }
+    #     }
+    # )
+    """As equivalent as __raw__ query"""
+    Comment.objects(id=comment_id, post=post_id, childs__id=child_comment_id).update(
+        set__childs__S__content=content,
+        set__childs__S__updated_at=datetime.utcnow(),
+    )
+
+    comment = Comment.objects(id=comment_id).aggregate(
+        [
+            {"$match": {"childs.id": ObjectId(child_comment_id)}},
+            {
+                "$project": {
+                    "childs": {
+                        "$filter": {
+                            "input": "$childs",
+                            "as": "comment",
+                            "cond": {"$eq": ["$$comment.id", ObjectId(child_comment_id)]},
+                        },
+                    },
+                },
+            },
+        ]
+    )
+    comment_out = None
+    for c in comment:
+        try:
+            comment_out = c["childs"][0]
+            comment_out["user"] = user
+        except Exception:
+            pass
+        break
+    return comment_out
+
+
+@router.delete(
+    "/api/v1/posts/{post_id}/{comment_id}/child/{child_comment_id}/",
+    status_code=status.HTTP_200_OK,
+)
+def delete_child_comment(
+    post_id: str,
+    comment_id: str,
+    child_comment_id: str,
+    user: User = Depends(get_authenticated_user),
+):
+    _ = get_object_or_404(
+        Comment,
+        id=comment_id,
+        post=post_id,
+        childs__user=user,
+        childs__id=child_comment_id,
+    )
+
+    Comment.objects(id=comment_id, post=post_id).update(
+        pull__childs__id=child_comment_id,
+    )
+
+    return {"message": "Delete"}
+
+
+# comment = Comment.objects(
+#     __raw__={
+#         "_id": ObjectId(comment_id),
+#         "childs": {"$elemMatch": {"id": ObjectId(first_comment_id)}},
+#     }
+# ).filter(__raw__={"childs": {"$elemMatch": {"id": ObjectId(first_comment_id)}}})
+# print(comment[0]._data)
+"""mongodb 4 or letter deprecated $eval command"""
+# data = Comment.objects.exec_js(
+#     """
+#     function() {
+#         var comments = [];
+#         return comments;
+#     }
+#     """
+# )

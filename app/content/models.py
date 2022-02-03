@@ -22,7 +22,8 @@ class Content(Document):
     created_at = DateTimeField(default=datetime.utcnow)
     updated_at = DateTimeField(default=datetime.utcnow)
 
-    meta = {'allow_inheritance': True}
+    meta = {"allow_inheritance": True}
+
 
 class Course(Content):
     content = StringField(required=True)

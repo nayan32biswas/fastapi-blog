@@ -9,7 +9,7 @@ from app.auth.utils import (
     create_access_token,
     create_refresh_token,
 )
-from app.user.models import User
+from .models import User
 from .schemas import UserBase, UserCreate
 
 

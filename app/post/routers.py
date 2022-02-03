@@ -40,9 +40,7 @@ router = APIRouter()
 #     return post
 
 
-@router.post(
-    "/api/v1/posts/", response_model=PostDetailsOut, status_code=status.HTTP_201_CREATED
-)
+@router.post("/api/v1/posts/", status_code=status.HTTP_201_CREATED)
 def create_post(
     name: str = Form(...),
     content: Optional[str] = Form(None),
@@ -61,10 +59,10 @@ def create_post(
         image=image_path,
     )
     post.save()
-    return post
+    return PostDetailsOut.from_orm(post)
 
 
-@router.put("/api/v1/posts/{post_id}/", response_model=PostDetailsOut)
+@router.put("/api/v1/posts/{post_id}/")
 def update_post(
     post_id: str,
     name: str = Form(None),
@@ -90,7 +88,7 @@ def update_post(
         update_data["is_publish"] = is_publish
     post.update(**update_data)
     post = get_object_or_404(Post, id=post_id)
-    return post
+    return PostDetailsOut.from_orm(post)
 
 
 @router.get("/api/v1/posts/", status_code=status.HTTP_200_OK)
@@ -133,18 +131,11 @@ def fetch_posts(
     return {"results": [PostListOut.from_orm(post) for post in posts]}
 
 
-@router.get("/api/v1/posts/{post_id}/", response_model=PostDetailsOut)
+@router.get("/api/v1/posts/{post_id}/")
 def fetch_post_details(post_id: str):
     post = get_object_or_404(Post, id=post_id)
-    print("\n\ndata")
-    print(Comment.objects(post=post_id))
-    for comment in Comment.objects(post=post_id):
-        print(comment._data)
-    post.comments = [
-        CommentOut.from_orm(comment) for comment in Comment.objects(post=post_id)
-    ]
-    # print(post.comments)
-    return post
+    post.comments = [comment for comment in Comment.objects(post=post_id)]
+    return PostDetailsOut.from_orm(post)
 
 
 @router.delete(

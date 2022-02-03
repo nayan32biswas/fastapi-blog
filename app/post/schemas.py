@@ -7,7 +7,7 @@ from app.user.schemas import MinimalUser
 
 
 class EmbedeComment(BaseModel):
-    # id: ObjectIdStr # showing error
+    id: ObjectIdStr
     user: MinimalUser
     content: str
     created_at: datetime
@@ -21,7 +21,7 @@ class BaseComment(BaseModel):
 
 
 class CommentOut(BaseComment):
-    # id: ObjectIdStr # showing error
+    id: ObjectIdStr
     user: MinimalUser
     childs: Optional[List[EmbedeComment]]
     created_at: datetime

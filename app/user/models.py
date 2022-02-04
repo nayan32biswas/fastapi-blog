@@ -1,4 +1,3 @@
-from enum import Enum
 from datetime import datetime
 
 from mongoengine import (
@@ -6,17 +5,14 @@ from mongoengine import (
     Document,
     DateTimeField,
     EmailField,
-    # EmbeddedDocument,
+    EmbeddedDocumentListField,
     EnumField,
-    # ObjectIdField,
     StringField,
+    ListField,
 )
 
-
-class UserRoles(Enum):
-    ADMIN = "ADMIN"
-    STAFF = "STAFF"
-    BASIC = "BASIC"
+from ..auth.permission import UserRoles
+from ..auth.models import Permission
 
 
 class User(Document):
@@ -28,6 +24,8 @@ class User(Document):
     is_active = BooleanField(default=True)
     date_joined = DateTimeField(default=datetime.utcnow)
     role = EnumField(UserRoles, default=UserRoles.BASIC)
+    permission_groups = ListField()
+    permissions = EmbeddedDocumentListField(Permission)
 
     last_login = DateTimeField(default=datetime.utcnow)
     password = StringField(max_length=128)

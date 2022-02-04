@@ -7,6 +7,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+from app.auth.permission import UserRoles
 
 from app.base.config import (
     SECRET_KEY,
@@ -39,6 +40,15 @@ async def get_authenticated_token(token: str = Depends(oauth2_scheme)):
 
 async def get_authenticated_user(token_data: User = Depends(get_authenticated_token)):
     user = User.objects(username=token_data.username).first()
+    if user is None:
+        raise credentials_exception
+    if user.is_active is False:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return user
+
+
+async def get_admin_user(token_data: User = Depends(get_authenticated_token)):
+    user = User.objects(username=token_data.username, role=UserRoles.ADMIN).first()
     if user is None:
         raise credentials_exception
     if user.is_active is False:

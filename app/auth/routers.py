@@ -1,16 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from .schemas import Token
+from .schemas import PermissionGroupUpdate, Token, PermissionGroupIn, PermissionGroupOut
 from .utils import authenticate_user, create_access_token
+from .models import Permission, PermissionGroup
 
 router = APIRouter()
 
-# <domein>/token for validate OpenAPI
-
 
 @router.post("/token", response_model=Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+# "localhost:8000/token" for validate OpenAPI
+def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     # Extend or reimplement OAuth2PasswordRequestForm to change authentication format or add additional fields
     user = authenticate_user(form_data.username, form_data.password)
     if not user:
@@ -21,3 +21,36 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         )
     access_token = create_access_token(data={"username": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post("/api/v1/permission-group/")
+def create_permission_group(data: PermissionGroupIn):
+    permissions = []
+    for permission in data.permissions:
+        value = "".join(sorted(set(permission.value)))
+        permissions.append(Permission(type=permission.type, value=value))
+    permission_group = PermissionGroup(
+        name=data.name, description=data.description, permissions=permissions
+    )
+    permission_group.save()
+    return PermissionGroupOut.from_orm(permission_group)
+
+
+@router.get("/api/v1/permission-group/")
+def get_permission_group(data: PermissionGroupIn):
+    permission_groups = PermissionGroup.objects()
+    return {
+        "results": [
+            PermissionGroupOut.from_orm(permission_group)
+            for permission_group in permission_groups
+        ]
+    }
+
+
+@router.put("/api/v1/permission-group/{permission_group_id}/")
+def update_permission_group(permission_group_id: str, data: PermissionGroupUpdate):
+    PermissionGroup.objects(id=permission_group_id).update_one(
+        name=data.name, description=data.description
+    )
+    permission_group = PermissionGroup.objects(id=permission_group_id).first()
+    return PermissionGroupUpdate.from_orm(permission_group)

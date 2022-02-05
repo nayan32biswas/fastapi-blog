@@ -1,10 +1,7 @@
 import os
-from typing import List
 from pathlib import Path
 
-
-def comma_separated_str_to_list(comma_separated_str: str) -> List[str]:
-    return comma_separated_str.split(",")
+from .config_utils import comma_separated_str_to_list, parse_redis_url
 
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "long-long-long-secret-key")
@@ -18,6 +15,8 @@ ALLOWED_HOSTS = comma_separated_str_to_list(
     os.environ.get("ALLOWED_HOSTS", "http://localhost:8080")
 )
 
-
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+REDIS_URL = os.environ.get("REDIS_HOST", "localhost://redis:6379/0")
+REDIS_CONNECTION_CONFIG = parse_redis_url(REDIS_URL)

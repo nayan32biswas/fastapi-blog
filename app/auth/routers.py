@@ -1,7 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from .schemas import PermissionGroupUpdate, Token, PermissionGroupIn, PermissionGroupOut
+from app.base.utils import get_object_or_404
+from app.user.models import User
+
+from .schemas import (
+    PermissionGroupAddUserIn,
+    PermissionGroupUpdate,
+    Token,
+    PermissionGroupIn,
+    PermissionGroupOut,
+)
 from .utils import authenticate_user, create_access_token
 from .models import Permission, PermissionGroup
 
@@ -54,3 +63,17 @@ def update_permission_group(permission_group_id: str, data: PermissionGroupUpdat
     )
     permission_group = PermissionGroup.objects(id=permission_group_id).first()
     return PermissionGroupUpdate.from_orm(permission_group)
+
+
+@router.post("/api/v1/permission-group/{permission_group_id}/add-users/")
+def add_permission_group_users(permission_group_id: str, data: PermissionGroupAddUserIn):
+    permission_group = get_object_or_404(PermissionGroup, id=permission_group_id)
+
+    users = User.objects(id__in=data.user_ids).update(
+        add_to_set__permissions=permission_group.id
+    )
+    print(users)
+
+    # permission_group.update(push__permissions=embedded_permission_group)
+    # print(updated)
+    return data

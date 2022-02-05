@@ -50,3 +50,7 @@ class PermissionGroupUpdate(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class PermissionGroupAddUserIn(BaseModel):
+    user_ids: List[str]

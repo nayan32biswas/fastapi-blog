@@ -6,6 +6,7 @@ x-volumes: &env-volume
   SECRET_KEY: "uwqr823y98ruwhnsenjfuchrbgyu2oriqwnefueiyucnewc"
 
   MONGO_HOST: "mongodb://root:password@db:27017/blog_db?authSource=admin"
+  REDIS_LOCAL_URL: "redis://redis:6379/1"
 
 services:
   api:
@@ -23,6 +24,7 @@ services:
       - ./:/app/server/
     depends_on:
       - db
+      - redis
     networks:
       - fastapi_blog-backend-tier
 
@@ -43,7 +45,7 @@ services:
       - fastapi_blog-backend-tier
 
   redis:
-    image: library/redis:5.0
+    image: redis:6
     container_name: fastapi_blog_redis
     restart: unless-stopped
     networks:

@@ -2,6 +2,7 @@ import os
 from fastapi import APIRouter, Depends, File, status, UploadFile, Request, HTTPException
 from fastapi.responses import FileResponse
 from app.auth.dependencies import get_authenticated_token
+from app.auth.models import get_permissions
 from app.base.config import MEDIA_ROOT
 from app.base.utils import save_image
 
@@ -13,6 +14,7 @@ router = APIRouter()
 
 @router.get("/", status_code=status.HTTP_200_OK)
 def home():
+    get_permissions()
     return {"message": "Hello World"}
 
 

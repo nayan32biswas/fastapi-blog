@@ -25,7 +25,7 @@ class PermissionGroupIn(BaseModel):
     permissions: List[PermissionIn]
 
 
-class PermissionOut(BaseModel):
+class PermissionDataType(BaseModel):
     type: str
     value: str
 
@@ -37,7 +37,7 @@ class PermissionGroupOut(BaseModel):
     id: ObjectIdStr
     name: str
     description: Optional[str] = None
-    permissions: List[PermissionOut]
+    permissions: List[PermissionDataType]
 
     class Config:
         orm_mode = True

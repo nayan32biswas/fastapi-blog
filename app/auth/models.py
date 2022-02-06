@@ -1,4 +1,5 @@
 from mongoengine import (
+    BooleanField,
     Document,
     EmbeddedDocument,
     EmbeddedDocumentListField,
@@ -7,6 +8,7 @@ from mongoengine import (
 )
 
 from .permission import PermissionType
+from app.base.local_cache import RedisHelper
 
 
 class Permission(EmbeddedDocument):
@@ -16,6 +18,35 @@ class Permission(EmbeddedDocument):
 
 
 class PermissionGroup(Document):
+    active = BooleanField(required=True, default=True)
     name = StringField(max_length=256, required=True, unique=True)
     description = StringField()
     permissions = EmbeddedDocumentListField(Permission)
+
+
+authentication_key = "local:auth:permissions"
+
+
+def get_filtered_auth(permission_list, permission_type: PermissionType):
+    return [data["type"] == permission_type for data in permission_list]
+
+
+def get_permissions(permission_type=PermissionType.POST):
+
+    r = RedisHelper(key=authentication_key)
+    permission_list = r.get_data()
+    print(permission_list)
+    if permission_list:
+        return get_filtered_auth(permission_list, permission_type)
+
+    permissions = []
+    # for permission_group in PermissionGroup.objects(active=True):
+    for permission_group in PermissionGroup.objects():
+        permissions += [
+            {"type": permission.type, "value": permission.value}
+            for permission in permission_group.permissions
+        ]
+
+    # r.data = permissions
+    # r.set_data()
+    return get_filtered_auth(permissions, permission_type)

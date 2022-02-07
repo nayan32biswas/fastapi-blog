@@ -2,7 +2,7 @@ import json
 
 import redis
 
-from .config import REDIS_CONNECTION_CONFIG
+from .config import REDIS_CONNECTION_CONFIG, REDIS_DEFAULT_TIMEOUT
 
 
 class RedisHelper:
@@ -14,17 +14,13 @@ class RedisHelper:
     def get_conn(self):
         try:
             r = redis.StrictRedis(**REDIS_CONNECTION_CONFIG, decode_responses=True)
-            print(r)
             return r
         except Exception:
             return None
 
     def get_data(self):
-        print("start")
         if self.redis:
-            print("TRYING")
             try:
-                print("\n\ndata")
                 data = self.redis.get(self.key)
                 if data:
                     return json.loads(data)
@@ -33,7 +29,7 @@ class RedisHelper:
         else:
             return None
 
-    def set_data(self, time=6000):
+    def set_data(self, time=REDIS_DEFAULT_TIMEOUT):
         if self.redis and self.data:
             try:
                 self.redis.setex(name=self.key, time=time, value=json.dumps(self.data))

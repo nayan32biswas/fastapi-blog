@@ -16,7 +16,7 @@ from fastapi import (
 from bson.objectid import ObjectId
 
 
-from app.auth.dependencies import get_authenticated_user
+from app.auth.dependencies import get_authenticated_user, has_post_delete_permission
 from app.base.utils import get_object_or_404, save_image
 from app.user.models import User
 
@@ -146,9 +146,11 @@ def delete_post(
     post_id: str,
     user: User = Depends(get_authenticated_user),
 ):
+    if has_post_delete_permission(user) is not True:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
     post = get_object_or_404(Post, id=post_id, user=user)
     post.delete()
-
     return {"message": "Delete"}
 
 
@@ -315,7 +317,6 @@ def delete_child_comment(
 #         "childs": {"$elemMatch": {"id": ObjectId(first_comment_id)}},
 #     }
 # ).filter(__raw__={"childs": {"$elemMatch": {"id": ObjectId(first_comment_id)}}})
-# print(comment[0]._data)
 """mongodb 4 or letter deprecated $eval command"""
 # data = Comment.objects.exec_js(
 #     """

@@ -12,7 +12,7 @@ from .schemas import (
     PermissionGroupOut,
 )
 from .utils import authenticate_user, create_access_token
-from .models import Permission, PermissionGroup
+from .models import Permission, PermissionGroup, remove_permissions_cache
 
 router = APIRouter()
 
@@ -42,6 +42,7 @@ def create_permission_group(data: PermissionGroupIn):
         name=data.name, description=data.description, permissions=permissions
     )
     permission_group.save()
+    remove_permissions_cache()
     return PermissionGroupOut.from_orm(permission_group)
 
 
@@ -61,6 +62,7 @@ def update_permission_group(permission_group_id: str, data: PermissionGroupUpdat
     PermissionGroup.objects(id=permission_group_id).update_one(
         name=data.name, description=data.description
     )
+    remove_permissions_cache()
     permission_group = PermissionGroup.objects(id=permission_group_id).first()
     return PermissionGroupUpdate.from_orm(permission_group)
 
@@ -69,11 +71,8 @@ def update_permission_group(permission_group_id: str, data: PermissionGroupUpdat
 def add_permission_group_users(permission_group_id: str, data: PermissionGroupAddUserIn):
     permission_group = get_object_or_404(PermissionGroup, id=permission_group_id)
 
-    users = User.objects(id__in=data.user_ids).update(
+    _ = User.objects(id__in=data.user_ids).update(
         add_to_set__permissions=permission_group.id
     )
-    print(users)
 
-    # permission_group.update(push__permissions=embedded_permission_group)
-    # print(updated)
     return data

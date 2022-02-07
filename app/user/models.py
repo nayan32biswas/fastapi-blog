@@ -6,7 +6,8 @@ from mongoengine import (
     DateTimeField,
     EmailField,
     EnumField,
-    ListField,
+    SortedListField,
+    ObjectIdField,
     StringField,
 )
 
@@ -23,7 +24,7 @@ class User(Document):
     date_joined = DateTimeField(default=datetime.utcnow)
     role = EnumField(UserRoles, default=UserRoles.BASIC)
     # store all permission_group id and get permissions from local cache data.
-    permissions = ListField()
+    permissions = SortedListField(ObjectIdField())
 
     last_login = DateTimeField(default=datetime.utcnow)
     password = StringField(max_length=128)

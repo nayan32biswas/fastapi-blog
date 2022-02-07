@@ -1,3 +1,4 @@
+from datetime import timedelta
 import os
 from pathlib import Path
 
@@ -20,3 +21,4 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 REDIS_URL = os.environ.get("REDIS_HOST", "localhost://redis:6379/0")
 REDIS_CONNECTION_CONFIG = parse_redis_url(REDIS_URL)
+REDIS_DEFAULT_TIMEOUT = timedelta(hours=1)

@@ -7,7 +7,8 @@ from fastapi.security import OAuth2PasswordBearer
 
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from app.auth.permission import UserRoles
+from app.auth.models import get_cached_or_db_permissions
+from app.auth.permission import PermissionType, PermissionValueChar, UserRoles
 
 from app.base.config import (
     SECRET_KEY,
@@ -54,3 +55,13 @@ async def get_admin_user(token_data: User = Depends(get_authenticated_token)):
     if user.is_active is False:
         raise HTTPException(status_code=400, detail="Inactive user")
     return user
+
+
+def has_post_delete_permission(user: User):
+    permissions = get_cached_or_db_permissions(
+        user_perm_group_ids=user.permissions, permission_type=PermissionType.POST
+    )
+    for permission in permissions:
+        if PermissionValueChar.DELETE.value in permission["value"]:
+            return True
+    return False

@@ -20,10 +20,10 @@ def parse_redis_url(url) -> dict:
 
     # Update with environment configuration.
     config = {
-        "DB": int(path or 0),
-        "PASSWORD": url.password or None,
-        "HOST": url.hostname or "localhost",
-        "PORT": int(url.port or 6379),
+        "db": int(path or 0),
+        "password": url.password or None,
+        "host": url.hostname or "localhost",
+        "port": int(url.port or 6379),
     }
 
     return config

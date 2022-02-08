@@ -21,6 +21,7 @@ class PermissionIn(BaseModel):
 
 class PermissionGroupIn(BaseModel):
     name: str
+    active: bool = True
     description: Optional[str] = None
     permissions: List[PermissionIn]
 
@@ -36,6 +37,7 @@ class PermissionDataType(BaseModel):
 class PermissionGroupOut(BaseModel):
     id: ObjectIdStr
     name: str
+    active: bool = False
     description: Optional[str] = None
     permissions: List[PermissionDataType]
 
@@ -43,14 +45,5 @@ class PermissionGroupOut(BaseModel):
         orm_mode = True
 
 
-class PermissionGroupUpdate(BaseModel):
-    # id: ObjectIdStr
-    name: str
-    description: Optional[str] = None
-
-    class Config:
-        orm_mode = True
-
-
-class PermissionGroupAddUserIn(BaseModel):
+class UsersIn(BaseModel):
     user_ids: List[str]

@@ -6,7 +6,6 @@ from fastapi import (
 from fastapi.security import OAuth2PasswordBearer
 
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from app.auth.models import get_cached_or_db_permissions
 from app.auth.permission import PermissionType, PermissionValueChar, UserRoles
 
@@ -18,7 +17,6 @@ from app.user.models import User
 from .schemas import TokenData
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 credentials_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -39,7 +37,7 @@ async def get_authenticated_token(token: str = Depends(oauth2_scheme)):
     return token_data
 
 
-async def get_authenticated_user(token_data: User = Depends(get_authenticated_token)):
+async def get_authenticated_user(token_data: TokenData = Depends(get_authenticated_token)):
     user = User.objects(username=token_data.username).first()
     if user is None:
         raise credentials_exception
@@ -48,7 +46,7 @@ async def get_authenticated_user(token_data: User = Depends(get_authenticated_to
     return user
 
 
-async def get_admin_user(token_data: User = Depends(get_authenticated_token)):
+async def get_admin_user(token_data: TokenData = Depends(get_authenticated_token)):
     user = User.objects(username=token_data.username, role=UserRoles.ADMIN).first()
     if user is None:
         raise credentials_exception

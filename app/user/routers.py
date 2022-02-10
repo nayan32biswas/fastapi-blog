@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.responses import JSONResponse
 from mongoengine.queryset.visitor import Q
 
 from app.auth.dependencies import get_authenticated_user
@@ -21,7 +22,7 @@ async def get_me(user: User = Depends(get_authenticated_user)):
     return UserBase(**user._data)
 
 
-@router.post("/v1/registration/", response_model=UserBase)
+@router.post("/v1/registration/")
 async def registration(new_user: UserCreate):
     user_exists = User.objects(
         Q(username=new_user.username) | Q(email=new_user.email)
@@ -36,7 +37,9 @@ async def registration(new_user: UserCreate):
     user.password = get_password_hash(new_user.password)
     user.save()
 
-    return new_user
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED, content=UserBase.from_orm(new_user).dict()
+    )
 
 
 @router.post("/v1/login/")

@@ -9,6 +9,9 @@ class UserBase(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
 
+    class Config:
+        orm_mode = True
+
 
 class UserCreate(UserBase):
     password: str

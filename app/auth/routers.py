@@ -64,12 +64,8 @@ def create_permission_group(data: PermissionGroupIn, db: Any = Depends(get_db)):
 
 @router.get("/api/v1/permission-group/")
 def get_permission_group(db: Any = Depends(get_db)):
-    permission_groups = db[PermissionGroup._db].find()
-    return {
-        "results": [
-            PermissionGroup(**pg).dict() for pg in permission_groups
-        ]
-    }
+    permission_groups = PermissionGroup.find(db)
+    return {"results": [PermissionGroup(**pg).dict() for pg in permission_groups]}
 
 
 @router.put("/api/v1/permission-group/{permission_group_id}/")

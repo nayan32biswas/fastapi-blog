@@ -5,7 +5,6 @@ from pydantic import Field
 
 from app.base.models import DBBaseModel
 from app.base.types import ObjectIdStr
-from app.base.utils.decorator import staticproperty
 from ..auth.permission import UserRoles
 
 
@@ -27,10 +26,6 @@ class User(DBBaseModel):
 
     class Meta:
         NAME = "user"
-
-    @staticproperty
-    def _db() -> str:
-        return User.Meta.NAME
 
 
 # class EmbeddedUser(EmbeddedDocument):

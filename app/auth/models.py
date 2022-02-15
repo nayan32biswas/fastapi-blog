@@ -4,7 +4,6 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from app.base.models import DBBaseModel
-from app.base.utils.decorator import staticproperty
 from app.base.utils.local_cache import RedisHelper
 from .permission import PermissionType, PermissionValueChar
 
@@ -23,10 +22,6 @@ class PermissionGroup(DBBaseModel):
 
     class Meta:
         NAME = "permission_group"
-
-    @staticproperty
-    def _db() -> str:
-        return PermissionGroup.Meta.NAME
 
 
 authentication_key = "local:auth:permissions"

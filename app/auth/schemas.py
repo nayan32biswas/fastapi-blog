@@ -35,7 +35,7 @@ class PermissionDataType(BaseModel):
 
 
 class PermissionGroupOut(BaseModel):
-    id: ObjectIdStr
+    id: Optional[ObjectIdStr] = None
     name: str
     active: bool = False
     description: Optional[str] = None

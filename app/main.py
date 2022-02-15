@@ -5,9 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from pymongo import MongoClient
 
-# from app.base import routers as base_routers
-# from app.auth import routers as auth_routers
-# from app.user import routers as user_routers
+from app.base import routers as base_routers
+from app.auth import routers as auth_routers
+from app.user import routers as user_routers
 # from app.post import routers as post_routers
 # from app.content import routers as content_routers
 
@@ -31,9 +31,9 @@ async def startup_db_client():
 async def shutdown_db_client():
     app.mongo_client.close()
 
-# app.include_router(base_routers.router, tags=["default"])
-# app.include_router(auth_routers.router, tags=["auth"])
-# app.include_router(user_routers.router, tags=["user"])
+app.include_router(base_routers.router, tags=["default"])
+app.include_router(auth_routers.router, tags=["auth"])
+app.include_router(user_routers.router, tags=["user"])
 # app.include_router(post_routers.router, tags=["post"])
 # app.include_router(content_routers.router, tags=["content"])
 

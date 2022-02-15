@@ -1,3 +1,4 @@
+from typing import Any
 from fastapi import (
     Depends,
     HTTPException,
@@ -13,7 +14,9 @@ from app.base.config import (
     SECRET_KEY,
     ALGORITHM,
 )
+from app.base.dependencies import get_db
 from app.user.models import User
+from app.user.query import get_user
 from .schemas import TokenData
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -27,7 +30,7 @@ credentials_exception = HTTPException(
 
 async def get_authenticated_token(token: str = Depends(oauth2_scheme)):
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload: Any = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("username")
         if username is None:
             raise credentials_exception
@@ -37,8 +40,10 @@ async def get_authenticated_token(token: str = Depends(oauth2_scheme)):
     return token_data
 
 
-async def get_authenticated_user(token_data: TokenData = Depends(get_authenticated_token)):
-    user = User.objects(username=token_data.username).first()
+async def get_authenticated_user(
+    db: Any = Depends(get_db), token_data: TokenData = Depends(get_authenticated_token)
+):
+    user = get_user(db, username=token_data.username)
     if user is None:
         raise credentials_exception
     if user.is_active is False:
@@ -46,8 +51,11 @@ async def get_authenticated_user(token_data: TokenData = Depends(get_authenticat
     return user
 
 
-async def get_admin_user(token_data: TokenData = Depends(get_authenticated_token)):
-    user = User.objects(username=token_data.username, role=UserRoles.ADMIN).first()
+async def get_admin_user(
+    db: Any = Depends(get_db), token_data: TokenData = Depends(get_authenticated_token)
+):
+    # user = User.objects(username=token_data.username, role=UserRoles.ADMIN).first()
+    user = get_user(db, username=token_data.username, role=UserRoles.ADMIN)
     if user is None:
         raise credentials_exception
     if user.is_active is False:

@@ -2,9 +2,10 @@ from datetime import datetime
 from typing import List, Optional
 
 from pydantic import Field
-from app.base.models import DBBaseModel, staticproperty
 
+from app.base.models import DBBaseModel
 from app.base.types import ObjectIdStr
+from app.base.utils.decorator import staticproperty
 from ..auth.permission import UserRoles
 
 

@@ -1,7 +1,10 @@
+from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from app.base.dependencies import get_db
 
 from app.base.query import get_object_or_404
+from app.base.types import ObjectIdStr
 from app.user.models import User
 
 from .schemas import (
@@ -18,9 +21,11 @@ router = APIRouter()
 
 @router.post("/token", response_model=Token)
 # "localhost:8000/token" for validate OpenAPI
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Any = Depends(get_db)
+):
     # Extend or reimplement OAuth2PasswordRequestForm to change authentication format or add additional fields
-    user = authenticate_user(form_data.username, form_data.password)
+    user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -50,46 +55,49 @@ def get_validate_permission_group(data: PermissionGroupIn) -> dict:
 
 
 @router.post("/api/v1/permission-group/")
-def create_permission_group(data: PermissionGroupIn):
+def create_permission_group(data: PermissionGroupIn, db: Any = Depends(get_db)):
     permission_group = PermissionGroup(**get_validate_permission_group(data))
-    permission_group.save()
+    permission_group = permission_group.create(db)
     remove_permissions_cache()
-    return PermissionGroupOut.from_orm(permission_group)
+    return permission_group.dict()
 
 
 @router.get("/api/v1/permission-group/")
-def get_permission_group():
-    permission_groups = PermissionGroup.objects()
+def get_permission_group(db: Any = Depends(get_db)):
+    permission_groups = db[PermissionGroup._db].find()
     return {
         "results": [
-            PermissionGroupOut.from_orm(permission_group)
-            for permission_group in permission_groups
+            PermissionGroup(**pg).dict() for pg in permission_groups
         ]
     }
 
 
 @router.put("/api/v1/permission-group/{permission_group_id}/")
-def update_permission_group(permission_group_id: str, data: PermissionGroupIn):
-    PermissionGroup.objects(id=permission_group_id).update_one(
-        **get_validate_permission_group(data)
-    )
+def update_permission_group(
+    permission_group_id: ObjectIdStr, data: PermissionGroupIn, db: Any = Depends(get_db)
+):
+    permission_group = get_object_or_404(db, PermissionGroup, id=permission_group_id)
+    permission_group.update(db, **get_validate_permission_group(data))
     remove_permissions_cache()
-    permission_group = PermissionGroup.objects(id=permission_group_id).first()
     return PermissionGroupOut.from_orm(permission_group)
 
 
 @router.delete("/api/v1/permission-group/{permission_group_id}/")
-def delete_permission_group(permission_group_id: str):
-    permission_group = get_object_or_404(PermissionGroup, id=permission_group_id)
+def delete_permission_group(permission_group_id: ObjectIdStr, db: Any = Depends(get_db)):
+    permission_group = get_object_or_404(db, PermissionGroup, id=permission_group_id)
+    raise NotImplementedError()
     User.objects().update(pull__permissions=permission_group.id)
-    permission_group.delete()
+    permission_group.delete(db)
     remove_permissions_cache()
     return {"message": "Object deleted"}
 
 
 @router.post("/api/v1/permission-group/{permission_group_id}/add-users/")
-def add_permission_group_users(permission_group_id: str, data: UsersIn):
-    permission_group = get_object_or_404(PermissionGroup, id=permission_group_id)
+def add_permission_group_users(
+    permission_group_id: ObjectIdStr, data: UsersIn, db: Any = Depends(get_db)
+):
+    permission_group = get_object_or_404(db, PermissionGroup, id=permission_group_id)
+    raise NotImplementedError()
     _ = User.objects(id__in=data.user_ids).update(
         add_to_set__permissions=permission_group.id
     )
@@ -97,8 +105,10 @@ def add_permission_group_users(permission_group_id: str, data: UsersIn):
 
 
 @router.post("/api/v1/permission-group/{permission_group_id}/remove-users/")
-def remove_permission_group_users(permission_group_id: str, data: UsersIn):
-    permission_group = get_object_or_404(PermissionGroup, id=permission_group_id)
-    print(permission_group._data)
+def remove_permission_group_users(
+    permission_group_id: ObjectIdStr, data: UsersIn, db: Any = Depends(get_db)
+):
+    permission_group = get_object_or_404(db, PermissionGroup, id=permission_group_id)
+    raise NotImplementedError()
     _ = User.objects(id__in=data.user_ids).update(pull__permissions=permission_group.id)
     return {"message": "Users removed"}

@@ -19,7 +19,7 @@ router = APIRouter(prefix="/api")
 
 @router.get("/v1/me/", response_model=UserBase)
 async def get_me(user: User = Depends(get_authenticated_user)):
-    return UserBase(**user._data)
+    return user
 
 
 @router.post("/v1/registration/")

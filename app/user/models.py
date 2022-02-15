@@ -1,34 +1,35 @@
 from datetime import datetime
+from typing import List, Optional
 
-from mongoengine import (
-    BooleanField,
-    Document,
-    DateTimeField,
-    EmailField,
-    EnumField,
-    SortedListField,
-    ObjectIdField,
-    StringField,
-)
+from pydantic import Field
+from app.base.models import DBBaseModel, staticproperty
 
+from app.base.types import ObjectIdStr
 from ..auth.permission import UserRoles
 
 
-class User(Document):
-    username = StringField(max_length=150, required=True, unique=True)
-    email = EmailField(max_length=150, required=True, unique=True)
-    first_name = StringField(max_length=150)
-    last_name = StringField(max_length=150)
+class User(DBBaseModel):
+    username: str = Field(...)
+    email: str = Field(...)
+    first_name: str = Field(...)
+    last_name: str = Field(...)
 
-    is_active = BooleanField(default=True)
-    date_joined = DateTimeField(default=datetime.utcnow)
-    role = EnumField(UserRoles, default=UserRoles.BASIC)
+    is_active: bool = True
+    date_joined: datetime = Field(default_factory=datetime.utcnow)
+    role: UserRoles = Field(default=UserRoles.BASIC)
     # store all permission_group id and get permissions from local cache data.
-    permissions = SortedListField(ObjectIdField())
+    permissions: List[ObjectIdStr] = []
 
-    last_login = DateTimeField(default=datetime.utcnow)
-    password = StringField(max_length=128)
-    image = StringField()
+    last_login: datetime = Field(default_factory=datetime.utcnow)
+    password: str = Field(...)
+    image: Optional[str] = Field(default=None)
+
+    class Meta:
+        NAME = "user"
+
+    @staticproperty
+    def _db() -> str:
+        return User.Meta.NAME
 
 
 # class EmbeddedUser(EmbeddedDocument):

@@ -5,7 +5,8 @@ x-volumes: &env-volume
   ALLOWED_HOSTS: "http://localhost:8080,http://localhost"
   SECRET_KEY: "uwqr823y98ruwhnsenjfuchrbgyu2oriqwnefueiyucnewc"
 
-  MONGO_HOST: "mongodb://root:password@db:27017/blog_db?authSource=admin"
+  MONGO_HOST: "mongodb://root:password@db:27017/?authSource=admin"
+  MONGO_DB_NAME: "blog_db"
   REDIS_LOCAL_URL: "redis://redis:6379/1"
 
 services:

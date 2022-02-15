@@ -15,7 +15,8 @@ from fastapi import (
 
 
 from app.auth.dependencies import get_authenticated_user, has_post_delete_permission
-from app.base.utils import get_object_or_404, save_image
+from app.base.query import get_object_or_404
+from app.base.utils.file import save_image
 from app.user.models import User
 
 from ..models import Comment, Post

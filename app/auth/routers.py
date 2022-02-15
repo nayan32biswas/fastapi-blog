@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.base.utils import get_object_or_404
+from app.base.query import get_object_or_404
 from app.user.models import User
 
 from .schemas import (

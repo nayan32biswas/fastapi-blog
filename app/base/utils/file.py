@@ -1,16 +1,10 @@
 import os
 import datetime
-from random import choice
-from string import ascii_lowercase, digits
 
-from mongoengine import Document
-from fastapi import File, HTTPException, status
+from fastapi import UploadFile
 
 from app.base.config import BASE_DIR, MEDIA_ROOT
-
-
-def rand_str(N=12):
-    return "".join(choice(ascii_lowercase + digits) for _ in range(N))
+from .string import rand_str
 
 
 def get_extension(filename):
@@ -18,7 +12,7 @@ def get_extension(filename):
     return name_list[-1] if len(name_list) > 1 else ""
 
 
-def save_image(uploaded_file: File, folder="image"):
+def save_image(uploaded_file: UploadFile, folder="image"):
     if not uploaded_file:
         return ""
     extension = get_extension(uploaded_file.filename)
@@ -38,10 +32,3 @@ def save_image(uploaded_file: File, folder="image"):
         return file_location.split(f"{BASE_DIR}")[-1]
     except Exception:
         return ""
-
-
-def get_object_or_404(Model: Document, **kwargs):
-    try:
-        return Model.objects.get(**kwargs)
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)

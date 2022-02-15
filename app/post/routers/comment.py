@@ -12,7 +12,7 @@ from bson.objectid import ObjectId
 
 
 from app.auth.dependencies import get_authenticated_user
-from app.base.utils import get_object_or_404
+from app.base.query import get_object_or_404
 from app.user.models import User
 
 from ..models import Comment, EmbeddedComment, Post

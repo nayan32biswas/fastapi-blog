@@ -9,7 +9,7 @@ from mongoengine import (
 )
 
 from .permission import PermissionType
-from app.base.local_cache import RedisHelper
+from app.base.utils.local_cache import RedisHelper
 
 
 class Permission(EmbeddedDocument):

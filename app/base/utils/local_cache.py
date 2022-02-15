@@ -2,7 +2,7 @@ import json
 
 import redis
 
-from .config import REDIS_CONNECTION_CONFIG, REDIS_DEFAULT_TIMEOUT
+from ..config import REDIS_CONNECTION_CONFIG, REDIS_DEFAULT_TIMEOUT
 
 
 class RedisHelper:

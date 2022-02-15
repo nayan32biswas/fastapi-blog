@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, status, Request, Up
 from fastapi.responses import FileResponse
 from app.auth.dependencies import get_authenticated_token
 from app.base.config import MEDIA_ROOT
-from app.base.utils import save_image
+from app.base.utils.file import save_image
 
 from app.user.models import User
 from . import ws_router

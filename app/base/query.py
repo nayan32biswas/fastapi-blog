@@ -2,14 +2,14 @@ from bson import ObjectId
 from typing import Any, Optional
 from fastapi import HTTPException, status
 
-from app.base.models import DBBaseModel
+from app.base.models import Document
 
 from .types import ObjectIdStr
 
 
 def get_object_or_404(
     db: Any, Model: Any, id: Optional[ObjectIdStr] = None, **kwargs
-) -> DBBaseModel:
+) -> Document:
     try:
         if id:
             kwargs["_id"] = ObjectId(id)

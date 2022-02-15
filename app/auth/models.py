@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
-from app.base.models import DBBaseModel
+from app.base.models import Document
 from app.base.utils.local_cache import RedisHelper
 from .permission import PermissionType, PermissionValueChar
 
@@ -14,7 +14,7 @@ class Permission(BaseModel):
     value: str = PermissionValueChar.RETRIEVE.value
 
 
-class PermissionGroup(DBBaseModel):
+class PermissionGroup(Document):
     active: bool = True
     name: str = Field(...)
     description: Optional[str]

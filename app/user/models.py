@@ -3,12 +3,12 @@ from typing import List, Optional
 
 from pydantic import Field
 
-from app.base.models import DBBaseModel
+from app.base.models import Document
 from app.base.types import ObjectIdStr
 from ..auth.permission import UserRoles
 
 
-class User(DBBaseModel):
+class User(Document):
     username: str = Field(...)
     email: str = Field(...)
     first_name: str = Field(...)

@@ -9,8 +9,9 @@ from app.base.config import MEDIA_ROOT
 from app.base.dependencies import get_db
 from app.base.utils.file import save_image
 from app.auth.schemas import Token
-from app.user.models import User
 from . import ws_router
+
+# from app.user.models import User
 
 
 router = APIRouter()
@@ -20,7 +21,7 @@ router.include_router(ws_router.router)
 
 @router.get("/", status_code=status.HTTP_200_OK)
 def home(db: Any = Depends(get_db)):
-    User.update_many(db, {}, {})
+    # User.find(db, {})
     return {"message": "Hello World"}
 
 

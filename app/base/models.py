@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, List, Optional
 from bson import ObjectId
 
 from pydantic import BaseModel, Field
@@ -15,7 +15,7 @@ def get_doc_name(model: Any) -> str:
         return camel_to_snake(model.__name__)
 
 
-class DBBaseModel(BaseModel):
+class Document(BaseModel):
     id: Optional[ObjectIdStr] = Field(default=None, alias="_id")
 
     class Meta:
@@ -26,9 +26,9 @@ class DBBaseModel(BaseModel):
         raise NotImplementedError()
 
     def __init__(self, *args, **kwargs):
-        if type(self) is DBBaseModel:
+        if type(self) is Document:
             raise Exception(
-                "DBBaseModel is an abstract class and cannot be instantiated directly"
+                "Document is an abstract class and cannot be instantiated directly"
             )
         super().__init__(*args, **kwargs)
 
@@ -64,3 +64,8 @@ class DBBaseModel(BaseModel):
     def update_many(cls, db: Any, filter: dict, data: dict, **kwargs):
         doc_name = get_doc_name(cls)
         return db[doc_name].update_many(filter, data, **kwargs)
+
+    @classmethod
+    def aggregate(cls, db: Any, pipeline: List[Any]):
+        doc_name = get_doc_name(cls)
+        return db[doc_name].update_many(pipeline)

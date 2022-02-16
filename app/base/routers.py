@@ -21,7 +21,6 @@ router.include_router(ws_router.router)
 
 @router.get("/", status_code=status.HTTP_200_OK)
 def home(db: Any = Depends(get_db)):
-    # User.find(db, {})
     return {"message": "Hello World"}
 
 

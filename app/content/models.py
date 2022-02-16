@@ -1,39 +1,34 @@
 from datetime import datetime
+from typing import Optional
 
-from mongoengine import (
-    BooleanField,
-    CASCADE,
-    DateTimeField,
-    Document,
-    ReferenceField,
-    StringField,
-)
+from pydantic import Field
+
+from app.base.models import Document
+from app.base.types import PydanticObjectId
 
 
 class Content(Document):
-    added_by = ReferenceField("User", reverse_delete_rule=CASCADE, required=True)
+    added_by: PydanticObjectId = Field(...)
+    name: str = Field(..., max_length=255)
+    image: Optional[str] = Field(default=None)
+    published_at: Optional[datetime] = Field(default=None)
+    is_publish: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-    name = StringField(max_length=512, required=True)
-    image = StringField()
-
-    published_at = DateTimeField()
-    is_publish = BooleanField(default=True)
-
-    created_at = DateTimeField(default=datetime.utcnow)
-    updated_at = DateTimeField(default=datetime.utcnow)
-
-    meta = {"allow_inheritance": True}
-
-
-class Course(Content):
-    content = StringField(required=True)
-
-    created_at = DateTimeField(default=datetime.utcnow)
-    updated_at = DateTimeField(default=datetime.utcnow)
+    class Config:
+        NAME = "content"
+        allow_inheritance = True
 
 
-class Article(Content):
-    content = StringField(required=True)
+class Course(Document):
+    content_id: PydanticObjectId = Field(...)
+    description: str = Field(...)
 
-    created_at = DateTimeField(default=datetime.utcnow)
-    updated_at = DateTimeField(default=datetime.utcnow)
+    class Config:
+        demo = "course"
+
+
+class Article(Document):
+    content_id: PydanticObjectId = Field(...)
+    description: str = Field(...)

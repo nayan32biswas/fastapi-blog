@@ -20,7 +20,7 @@ class PermissionGroup(Document):
     description: Optional[str]
     permissions: List[Permission] = []
 
-    class Meta:
+    class Config:
         NAME = "permission_group"
 
 

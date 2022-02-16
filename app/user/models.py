@@ -24,7 +24,7 @@ class User(Document):
     password: str = Field(...)
     image: Optional[str] = Field(default=None)
 
-    class Meta:
+    class Config:
         NAME = "user"
 
 

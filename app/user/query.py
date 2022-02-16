@@ -9,5 +9,5 @@ def get_user(db, or_q: dict = {}, **kwargs):
             query["$or"].append({f"{key}": or_q[key]})
     user = User.find_one(db, query)
     if user:
-        return User(**user)
+        return user
     return None

@@ -1,49 +1,42 @@
 from datetime import datetime
+from typing import List, Optional
 
 from bson.objectid import ObjectId
-from mongoengine import (
-    BooleanField,
-    CASCADE,
-    DateTimeField,
-    Document,
-    EmbeddedDocument,
-    EmbeddedDocumentField,
-    ListField,
-    ObjectIdField,
-    ReferenceField,
-    StringField,
-)
+from pydantic import BaseModel, Field
+
+from app.base.models import Document
+from app.base.types import PydanticObjectId
 
 
 class Post(Document):
-    user = ReferenceField("User", reverse_delete_rule=CASCADE, required=True)
+    user_id: PydanticObjectId = Field(...)
 
-    name = StringField(max_length=512, required=True)
-    content = StringField(required=True)
-    image = StringField()
+    name: str = Field(max_length=512)
+    description: Optional[str] = None
+    image: Optional[str] = None
 
-    published_at = DateTimeField()
-    is_publish = BooleanField(default=True)
+    published_at: Optional[datetime] = None
+    is_publish: bool = True
 
-    created_at = DateTimeField(default=datetime.utcnow)
-    updated_at = DateTimeField(default=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
-class EmbeddedComment(EmbeddedDocument):
-    id = ObjectIdField(default=ObjectId, required=True)
-    user = ReferenceField("User", required=True)
-    content = StringField(required=True)
+class EmbeddedComment(BaseModel):
+    id: PydanticObjectId = Field(default_factory=ObjectId)
+    user_id: PydanticObjectId = Field(...)
+    description: str = Field(...)
 
-    created_at = DateTimeField(default=datetime.utcnow)
-    updated_at = DateTimeField(default=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class Comment(Document):
-    user = ReferenceField("User", reverse_delete_rule=CASCADE, required=True)
-    post = ReferenceField("Post", reverse_delete_rule=CASCADE, required=True)
-    childs = ListField(EmbeddedDocumentField("EmbeddedComment"))
+    user_id: PydanticObjectId = Field(...)
+    post_id: PydanticObjectId = Field(...)
+    childs: List[EmbeddedComment] = []
 
-    content = StringField(required=True)
+    description: str = Field(...)
 
-    created_at = DateTimeField(default=datetime.utcnow)
-    updated_at = DateTimeField(default=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)

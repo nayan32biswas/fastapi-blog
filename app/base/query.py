@@ -7,7 +7,7 @@ from app.base.models import Document
 
 def get_object_or_404(
     db: Any, Model: Any, id: Optional[str] = None, **kwargs
-) -> Document:
+):
     if id is not None:
         id: Any = id if type(id) == ObjectId else ObjectId(id)
         kwargs["_id"] = id

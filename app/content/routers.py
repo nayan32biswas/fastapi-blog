@@ -14,7 +14,7 @@ router = APIRouter(prefix="/api")
 async def create_content(
     user: User = Depends(get_authenticated_user), db: Any = Depends(get_db)
 ):
-    content = Content(added_by=user.id, name="Demo Name").create(db)
+    content = Content(added_by_id=user.id, name="Demo Name").create(db)
     print(content)
     return "Content Added"
 
@@ -23,7 +23,7 @@ async def create_content(
 async def create_course(
     user: User = Depends(get_authenticated_user), db: Any = Depends(get_db)
 ):
-    content = Content(added_by=user.id, name="Demo Name").create(db)
+    content = Content(added_by_id=user.id, name="Demo Name").create(db)
     course = Course(content_id=content.id, description="Demo Content").create(db)
     print(course)
     return "Course Added"
@@ -33,7 +33,7 @@ async def create_course(
 async def create_article(
     user: User = Depends(get_authenticated_user), db: Any = Depends(get_db)
 ):
-    content = Content(added_by=user.id, name="Demo Name").create(db)
+    content = Content(added_by_id=user.id, name="Demo Name").create(db)
     article = Article(content_id=content.id, description="Demo Content").create(db)
     print(article)
     return "Article Added"

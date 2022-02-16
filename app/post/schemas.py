@@ -9,7 +9,7 @@ from app.user.schemas import MinimalUser
 class EmbedeComment(BaseModel):
     id: ObjectIdStr
     user: MinimalUser
-    content: str
+    description: str
     created_at: datetime
 
     class Config:
@@ -17,7 +17,7 @@ class EmbedeComment(BaseModel):
 
 
 class BaseComment(BaseModel):
-    content: str
+    description: str
 
 
 class CommentOut(BaseComment):
@@ -38,7 +38,7 @@ class BasePost(BaseModel):
 
 
 class PostForm(BasePost):
-    content: str
+    description: str
 
 
 class PostListOut(BasePost):
@@ -51,7 +51,7 @@ class PostListOut(BasePost):
 
 class PostDetailsOut(BasePost):
     id: ObjectIdStr
-    content: str
+    description: str
     comments: Optional[List[CommentOut]]
     user: MinimalUser
 

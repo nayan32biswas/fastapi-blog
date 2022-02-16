@@ -58,7 +58,9 @@ class Document(BaseModel):
     @classmethod
     def find_one(cls, db: Any, filter: dict = {}):
         doc_name = get_doc_name(cls)
-        return db[doc_name].find_one(filter)
+        data = db[doc_name].find_one(filter)
+        if data:
+            return cls(**data)
 
     @classmethod
     def update_many(cls, db: Any, filter: dict, data: dict, **kwargs):

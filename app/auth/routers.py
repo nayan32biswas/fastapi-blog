@@ -1,12 +1,13 @@
 from typing import Any
+from bson import ObjectId
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from app.base.dependencies import get_db
 
+from app.base.dependencies import get_db
 from app.base.query import get_object_or_404
 from app.base.types import ObjectIdStr
 from app.user.models import User
-
 from .schemas import (
     Token,
     UsersIn,
@@ -79,10 +80,12 @@ def update_permission_group(
 
 
 @router.delete("/api/v1/permission-group/{permission_group_id}/")
-def delete_permission_group(permission_group_id: ObjectIdStr, db: Any = Depends(get_db)):
+def delete_permission_group(permission_group_id: str, db: Any = Depends(get_db)):
     permission_group = get_object_or_404(db, PermissionGroup, id=permission_group_id)
-    raise NotImplementedError()
-    User.objects().update(pull__permissions=permission_group.id)
+    # User.objects().update(pull__permissions=permission_group.id)
+    User.update_many(
+        db, {}, {"$pull": {"permissions": ObjectId(permission_group.id)}}
+    )
     permission_group.delete(db)
     remove_permissions_cache()
     return {"message": "Object deleted"}
@@ -90,21 +93,29 @@ def delete_permission_group(permission_group_id: ObjectIdStr, db: Any = Depends(
 
 @router.post("/api/v1/permission-group/{permission_group_id}/add-users/")
 def add_permission_group_users(
-    permission_group_id: ObjectIdStr, data: UsersIn, db: Any = Depends(get_db)
+    permission_group_id: str, data: UsersIn, db: Any = Depends(get_db)
 ):
     permission_group = get_object_or_404(db, PermissionGroup, id=permission_group_id)
-    raise NotImplementedError()
-    _ = User.objects(id__in=data.user_ids).update(
-        add_to_set__permissions=permission_group.id
+    # _ = User.objects(id__in=data.user_ids).update(
+    #     add_to_set__permissions=permission_group.id
+    # )
+    user_ids = [ObjectId(user_id) for user_id in data.user_ids]
+    User.update_many(
+        db,
+        {"_id": {"$in": user_ids}},
+        {"$addToSet": {"permissions": ObjectId(permission_group.id)}},
     )
     return data
 
 
 @router.post("/api/v1/permission-group/{permission_group_id}/remove-users/")
 def remove_permission_group_users(
-    permission_group_id: ObjectIdStr, data: UsersIn, db: Any = Depends(get_db)
+    permission_group_id: str, data: UsersIn, db: Any = Depends(get_db)
 ):
     permission_group = get_object_or_404(db, PermissionGroup, id=permission_group_id)
-    raise NotImplementedError()
-    _ = User.objects(id__in=data.user_ids).update(pull__permissions=permission_group.id)
+    # _ = User.objects(id__in=data.user_ids).update(pull__permissions=permission_group.id)
+    user_ids = [ObjectId(user_id) for user_id in data.user_ids]
+    User.update_many(
+        db, {"_id": {"$in": user_ids}}, {"$pull": {"permissions": ObjectId(permission_group.id)}}
+    )
     return {"message": "Users removed"}

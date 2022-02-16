@@ -1,28 +1,27 @@
 from datetime import timedelta
-from mongoengine import (
-    BooleanField,
-    Document,
-    EmbeddedDocument,
-    EmbeddedDocumentListField,
-    EnumField,
-    StringField,
-)
+from typing import List, Optional
 
-from .permission import PermissionType
+from pydantic import BaseModel, Field
+
+from app.base.models import Document
 from app.base.utils.local_cache import RedisHelper
+from .permission import PermissionType, PermissionValueChar
 
 
-class Permission(EmbeddedDocument):
-    type = EnumField(PermissionType, default=PermissionType.OTHER)
+class Permission(BaseModel):
+    type: PermissionType = PermissionType.OTHER
     # value should store one or multiple char of "CRUD" Create, Retrieve, Update, Delete permission
-    value = StringField(max_length=8, required=True)
+    value: str = PermissionValueChar.RETRIEVE.value
 
 
 class PermissionGroup(Document):
-    active = BooleanField(required=True, default=True)
-    name = StringField(max_length=256, required=True, unique=True)
-    description = StringField()
-    permissions = EmbeddedDocumentListField(Permission)
+    active: bool = True
+    name: str = Field(...)
+    description: Optional[str]
+    permissions: List[Permission] = []
+
+    class Config:
+        NAME = "permission_group"
 
 
 authentication_key = "local:auth:permissions"
@@ -54,6 +53,7 @@ def get_cached_or_db_permissions(
 
     permissions = []
     # for permission_group in PermissionGroup.objects(active=True):
+    raise NotImplementedError()
     for permission_group in PermissionGroup.objects():
         permissions += [
             {

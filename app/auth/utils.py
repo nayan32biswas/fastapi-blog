@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import Optional
 
 from jose import jwt
 from passlib.context import CryptContext
@@ -10,6 +11,7 @@ from app.base.config import (
     REFRESH_TOKEN_EXPIRE_DAYS,
 )
 from app.user.models import User
+from app.user.query import get_user
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -23,12 +25,12 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-def authenticate_user(username: str, password: str):
-    user = User.objects(username=username).first()
+def authenticate_user(db, username: str, password: str) -> Optional[User]:
+    user = get_user(db, username=username)
     if not user:
-        return False
+        return None
     if not verify_password(password, user.password):
-        return False
+        return None
     return user
 
 

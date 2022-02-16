@@ -1,13 +1,17 @@
 import os
+from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, status, Request, UploadFile
 from fastapi.responses import FileResponse
+
 from app.auth.dependencies import get_authenticated_token
 from app.base.config import MEDIA_ROOT
+from app.base.dependencies import get_db
 from app.base.utils.file import save_image
-
-from app.user.models import User
+from app.auth.schemas import Token
 from . import ws_router
+
+# from app.user.models import User
 
 
 router = APIRouter()
@@ -16,14 +20,14 @@ router.include_router(ws_router.router)
 
 
 @router.get("/", status_code=status.HTTP_200_OK)
-def home():
+def home(db: Any = Depends(get_db)):
     return {"message": "Hello World"}
 
 
 @router.post("/upload-image/")
 async def create_upload_image(
     image: UploadFile = File(...),
-    _: User = Depends(get_authenticated_token),
+    _: Token = Depends(get_authenticated_token),
 ):
     image_path = save_image(image, folder="image")
     return image_path

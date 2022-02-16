@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 
 from fastapi import (
@@ -12,6 +13,7 @@ from bson.objectid import ObjectId
 
 
 from app.auth.dependencies import get_authenticated_user
+from app.base.dependencies import get_db
 from app.base.query import get_object_or_404
 from app.user.models import User
 
@@ -25,13 +27,15 @@ router = APIRouter()
 @router.post("/api/v1/posts/{post_id}/", response_model=CommentOut)
 def create_post_comment(
     post_id: str,
-    content: str = Form(...),
+    description: str = Form(...),
     user: User = Depends(get_authenticated_user),
+    db: Any = Depends(get_db),
 ):
-    post = get_object_or_404(Post, id=post_id)
-    comment = Comment(user=user, post=post, content=content)
-    comment.save()
-
+    post = get_object_or_404(db, Post, id=post_id)
+    raise NotImplementedError()
+    comment = Comment(user_id=user.id, post_id=post.id, description=description).create(
+        db
+    )
     return comment
 
 
@@ -39,14 +43,15 @@ def create_post_comment(
 def update_comment(
     post_id: str,
     comment_id: str,
-    content: str = Form(...),
+    description: str = Form(...),
     user: User = Depends(get_authenticated_user),
+    db: Any = Depends(get_db),
 ):
-    comment = get_object_or_404(Comment, id=comment_id, post=post_id, user=user)
-    comment.content = content
-    comment.updated_at = datetime.utcnow()
-    comment.save()
-    comment.reload()
+    comment = get_object_or_404(db, Comment, id=comment_id, post=post_id, user=user)
+    raise NotImplementedError()
+    comment.update(
+        db, {"$set": {"description": description, "updated_at": datetime.utcnow()}}
+    )
 
     return CommentOut.from_orm(comment)
 
@@ -59,14 +64,17 @@ def delete_comment(
     post_id: str,
     comment_id: str,
     user: User = Depends(get_authenticated_user),
+    db: Any = Depends(get_db),
 ):
     comment = get_object_or_404(
+        db,
         Comment,
         id=comment_id,
         post=post_id,
         user=user,
     )
-    comment.delete()
+    raise NotImplementedError()
+    comment.delete(db)
 
     return {"message": "Delete"}
 
@@ -78,11 +86,13 @@ def delete_comment(
 def create_child_comment(
     post_id: str,
     comment_id: str,
-    content: str = Form(...),
+    description: str = Form(...),
     user: User = Depends(get_authenticated_user),
+    db: Any = Depends(get_db),
 ):
-    comment = get_object_or_404(Comment, id=comment_id, post=post_id, user=user)
-    child_comment = EmbeddedComment(user=user, content=content)
+    comment = get_object_or_404(db, Comment, id=comment_id, post=post_id, user=user)
+    raise NotImplementedError()
+    child_comment = EmbeddedComment(user_id=user.id, description=description)
     comment.update(push__childs=child_comment)
     return CommentOut.from_orm(child_comment)
 
@@ -98,14 +108,17 @@ def update_child_comment(
     child_comment_id: str,
     content: str = Form(...),
     user: User = Depends(get_authenticated_user),
+    db: Any = Depends(get_db),
 ):
     _ = get_object_or_404(
+        db,
         Comment,
         id=comment_id,
-        post=post_id,
+        post_id=post_id,
         childs__user=user,
         childs__id=child_comment_id,
     )
+    raise NotImplementedError()
 
     # Comment.objects(
     #     __raw__={
@@ -122,14 +135,19 @@ def update_child_comment(
     #     }
     # )
     """As equivalent as __raw__ query"""
-    Comment.objects(id=comment_id, post=post_id, childs__id=child_comment_id).update(
-        set__childs__S__content=content,
-        set__childs__S__updated_at=datetime.utcnow(),
+    Comment.update_one(
+        db,
+        {"id": comment_id, "post_id": post_id, "childs__id": child_comment_id},
+        {
+            "set__childs__S__content": content,
+            "set__childs__S__updated_at": datetime.utcnow(),
+        },
     )
 
-    comment = Comment.objects(id=comment_id).aggregate(
+    comment = Comment.aggregate(
+        db,
         [
-            {"$match": {"childs.id": ObjectId(child_comment_id)}},
+            {"$match": {"_id": comment_id, "childs.id": ObjectId(child_comment_id)}},
             {
                 "$project": {
                     "childs": {
@@ -141,7 +159,7 @@ def update_child_comment(
                     },
                 },
             },
-        ]
+        ],
     )
     comment_out = None
     for c in comment:
@@ -163,17 +181,21 @@ def delete_child_comment(
     comment_id: str,
     child_comment_id: str,
     user: User = Depends(get_authenticated_user),
+    db: Any = Depends(get_db),
 ):
     _ = get_object_or_404(
+        db,
         Comment,
         id=comment_id,
         post=post_id,
         childs__user=user,
         childs__id=child_comment_id,
     )
-
-    Comment.objects(id=comment_id, post=post_id).update(
-        pull__childs__id=child_comment_id,
+    raise NotImplementedError()
+    Comment.update_one(
+        db,
+        {"_idid": comment_id, "post": post_id},
+        {"pull__childs__id": child_comment_id},
     )
 
     return {"message": "Delete"}

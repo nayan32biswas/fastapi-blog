@@ -2,13 +2,13 @@ from datetime import datetime
 from typing import List, Optional
 
 from pydantic import Field
-from app.base.models import DBBaseModel, staticproperty
 
+from app.base.models import Document
 from app.base.types import ObjectIdStr
 from ..auth.permission import UserRoles
 
 
-class User(DBBaseModel):
+class User(Document):
     username: str = Field(...)
     email: str = Field(...)
     first_name: str = Field(...)
@@ -24,12 +24,8 @@ class User(DBBaseModel):
     password: str = Field(...)
     image: Optional[str] = Field(default=None)
 
-    class Meta:
+    class Config:
         NAME = "user"
-
-    @staticproperty
-    def _db() -> str:
-        return User.Meta.NAME
 
 
 # class EmbeddedUser(EmbeddedDocument):

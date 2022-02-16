@@ -41,9 +41,9 @@ class Document(BaseModel):
             return model(**obj)
         return inserted_id
 
-    def update(self, db: Any, **kwargs):
+    def update(self, db: Any, data):
         doc_name = get_doc_name(self.__class__)
-        updated = db[doc_name].delete_one({"_id": ObjectId(self.id)}, {"$set": kwargs})
+        updated = db[doc_name].update_one({"_id": ObjectId(self.id)}, data)
         return updated
 
     def delete(self, db: Any):
@@ -70,4 +70,4 @@ class Document(BaseModel):
     @classmethod
     def aggregate(cls, db: Any, pipeline: List[Any]):
         doc_name = get_doc_name(cls)
-        return db[doc_name].update_many(pipeline)
+        return db[doc_name].aggregate(pipeline)

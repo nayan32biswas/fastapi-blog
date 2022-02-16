@@ -50,7 +50,7 @@ def create_post(
     user: User = Depends(get_authenticated_user),
     db: Any = Depends(get_db),
 ):
-    raise NotImplementedError()
+    # raise NotImplementedError()
     image_path = save_image(image, folder="post")
     post = Post(
         user_id=user.id,
@@ -59,8 +59,9 @@ def create_post(
         published_at=published_at,
         is_publish=is_publish,
         image=image_path,
-    ).create(db)
-    post.save()
+    )
+    print(post)
+    post.create(db)
     return PostDetailsOut.from_orm(post)
 
 

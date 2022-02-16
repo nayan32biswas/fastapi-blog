@@ -53,7 +53,7 @@ class PostDetailsOut(BasePost):
     id: ObjectIdStr
     description: str
     comments: Optional[List[CommentOut]]
-    user: MinimalUser
+    # user: MinimalUser
 
     class Config:
         orm_mode = True

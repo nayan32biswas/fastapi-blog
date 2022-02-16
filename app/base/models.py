@@ -34,7 +34,7 @@ class Document(BaseModel):
 
     def create(self, db: Any, get_obj=True) -> Any:
         doc_name = _get_doc_name(self.__class__)
-        inserted_id = db[doc_name].insert_one(self.dict()).inserted_id
+        inserted_id = db[doc_name].insert_one(self.dict(exclude={"id"})).inserted_id
         if get_obj is True:
             obj: Any = db[doc_name].find_one({"_id": inserted_id})
             model = self.__class__
@@ -51,21 +51,21 @@ class Document(BaseModel):
         return db[doc_name].delete_one({"_id": self.id})
 
     @classmethod
-    def find(cls, db: Any, filter: dict = {}):
+    def find(cls, db: Any, filter: dict):
         doc_name = _get_doc_name(cls)
         return db[doc_name].find(filter)
 
     @classmethod
-    def find_one(cls, db: Any, filter: dict = {}):
+    def find_one(cls, db: Any, filter: dict):
         doc_name = _get_doc_name(cls)
         data = db[doc_name].find_one(filter)
         if data:
             return cls(**data)
 
     @classmethod
-    def update_one(cls, db: Any, filter: dict, data: dict):
+    def update_one(cls, db: Any, filter: dict, data: dict, **kwargs):
         doc_name = _get_doc_name(cls)
-        data = db[doc_name].update_one(filter, data)
+        data = db[doc_name].update_one(filter, data, **kwargs)
         return True
 
     @classmethod

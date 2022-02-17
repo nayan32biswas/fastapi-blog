@@ -51,7 +51,7 @@ class Document(BaseModel):
         return db[doc_name].delete_one({"_id": self.id})
 
     @classmethod
-    def find(cls, db: Any, filter: dict):
+    def find(cls, db: Any, filter: dict = {}):
         doc_name = _get_doc_name(cls)
         return db[doc_name].find(filter)
 
@@ -63,13 +63,13 @@ class Document(BaseModel):
             return cls(**data)
 
     @classmethod
-    def update_one(cls, db: Any, filter: dict, data: dict, **kwargs):
+    def update_one(cls, db: Any, filter: dict = {}, data: dict = {}, **kwargs):
         doc_name = _get_doc_name(cls)
         data = db[doc_name].update_one(filter, data, **kwargs)
         return True
 
     @classmethod
-    def update_many(cls, db: Any, filter: dict, data: dict, **kwargs):
+    def update_many(cls, db: Any, filter: dict = {}, data: dict = {}, **kwargs):
         doc_name = _get_doc_name(cls)
         return db[doc_name].update_many(filter, data, **kwargs)
 

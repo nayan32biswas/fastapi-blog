@@ -14,10 +14,10 @@ def decode_firetoken(token):
         simplified_token["email"] = decoded_token.get("email", "")
         simplified_token["email_verification"] = decoded_token.get("email_verified")
 
-        return 1, simplified_token
+        return simplified_token
     except Exception as e:
         print("Error While Decoding FireJWT:", str(e))
-        return 0, None
+        return None
 
 
 def create_user(email="example@example.com", password="exampelpass"):

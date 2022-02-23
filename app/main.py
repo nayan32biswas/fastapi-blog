@@ -20,6 +20,8 @@ app: Any = FastAPI()
 # Global dependency
 # app = FastAPI(dependencies=[Depends(verify_token), Depends(verify_key)])
 
+config.init_firebase_auth()
+
 
 @app.on_event("startup")
 async def startup_db_client():
@@ -30,6 +32,7 @@ async def startup_db_client():
 @app.on_event("shutdown")
 async def shutdown_db_client():
     app.mongo_client.close()
+
 
 app.include_router(base_routers.router, tags=["default"])
 app.include_router(auth_routers.router, tags=["auth"])

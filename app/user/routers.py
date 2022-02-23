@@ -1,9 +1,10 @@
 from typing import Any
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Form, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 
 from app.auth.dependencies import get_authenticated_user
+from app.auth.firebase_auth import decode_firetoken
 from app.auth.utils import (
     get_password_hash,
     authenticate_user,
@@ -50,7 +51,6 @@ async def login(
 ):
     # Extend or reimplement OAuth2PasswordRequestForm to change authentication format or add additional fields
     user = authenticate_user(db, form_data.username, form_data.password)
-    print(user)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -58,6 +58,23 @@ async def login(
         )
     access_token = create_access_token(data={"username": user.username})
     refresh_token = create_refresh_token(data={"username": user.username})
+    return {
+        "token_type": "Bearer",
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+    }
+
+
+@router.post("/v1/firebase/")
+async def firebase(fire_token: str = Form(...), db: Any = Depends(get_db)):
+    fire_payload = decode_firetoken(fire_token)
+    if fire_payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+        )
+    access_token = create_access_token(data={"uid": fire_payload.get("uid")})
+    refresh_token = create_refresh_token(data={"uid": fire_payload.get("uid")})
     return {
         "token_type": "Bearer",
         "access_token": access_token,

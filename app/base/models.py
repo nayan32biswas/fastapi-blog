@@ -1,5 +1,6 @@
 from typing import Any, List, Optional, Tuple
 from bson import ObjectId
+from bson.dbref import DBRef
 
 from pydantic import BaseModel, Field
 
@@ -88,6 +89,11 @@ class Document(BaseModel):
         doc_name, _ = _get_doc_name(cls)
         return db[doc_name].aggregate(pipeline)
 
+    @property
+    def ref(self):
+        doc_name, _ = _get_doc_name(self.__class__)
+        return PydanticDBRef(collection=doc_name, id=self.id)
+
 
 def convert_model_to_doc(model: Any) -> str:
     if hasattr(model.Config, "NAME") and model.Config.NAME is not None:
@@ -114,3 +120,18 @@ def _get_doc_name(model: Any) -> Tuple[str, Optional[str]]:
         return convert_model_to_doc(base_model), convert_model_to_doc(model)
     else:
         return convert_model_to_doc(model), None
+
+
+class PydanticDBRef(DBRef):
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        if isinstance(v, DBRef):
+            return v
+        if not issubclass(v.__class__, Document) or not hasattr(v, "id"):
+            raise TypeError("Invalid Document Model")
+        doc_name, _ = _get_doc_name(v.__class__)
+        return DBRef(collection=doc_name, id=v.id)

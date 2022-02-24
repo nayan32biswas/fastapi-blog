@@ -2,8 +2,6 @@ from bson import ObjectId
 from typing import Any, Optional
 from fastapi import HTTPException, status
 
-from app.base.models import Document
-
 
 def get_object_or_404(
     db: Any, Model: Any, id: Optional[str] = None, **kwargs

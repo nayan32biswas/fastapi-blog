@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import Field
 
-from app.base.models import Document
+from app.base.models import Document, PydanticDBRef
 from app.base.types import PydanticObjectId
 
 
@@ -21,8 +21,7 @@ class Content(Document):
         allow_inheritance = True
 
 
-class Course(Document):
-    content_id: PydanticObjectId = Field(...)
+class Course(Content):
     description: str = Field(...)
 
     class Config:
@@ -30,5 +29,5 @@ class Course(Document):
 
 
 class Article(Document):
-    content_id: PydanticObjectId = Field(...)
+    content: PydanticDBRef = Field(...)
     description: str = Field(...)

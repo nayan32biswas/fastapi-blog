@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field
 
 from app.base.types import PydanticObjectId
 from app.base.utils.string import camel_to_snake
-from .utils.decorator import staticproperty
 
 
 INHERITANCE_FIELD_NAME = "_cls"
@@ -18,9 +17,10 @@ class Document(BaseModel):
     class Config:
         NAME = None
 
-    @staticproperty
-    def _db() -> str:
-        raise NotImplementedError()
+    @classmethod
+    def _db(cls) -> str:
+        doc_name, _ = _get_doc_name(cls)
+        return doc_name
 
     def __init__(self, *args, **kwargs):
         if type(self) is Document:

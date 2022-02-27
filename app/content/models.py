@@ -3,8 +3,8 @@ from typing import Optional
 
 from pydantic import Field
 
-from app.base.models import Document, PydanticDBRef
-from app.base.types import PydanticObjectId
+from app.odm.models import Document, PydanticDBRef
+from app.odm.models import PydanticObjectId
 
 
 class Content(Document):

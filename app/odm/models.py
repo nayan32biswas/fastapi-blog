@@ -4,11 +4,37 @@ from bson.dbref import DBRef
 
 from pydantic import BaseModel, Field
 
-from app.base.types import PydanticObjectId
-from app.base.utils.string import camel_to_snake
+from .utils import camel_to_snake
+from app.base import config
 
+
+mongo_client, db = config.get_mongo_client_and_db()
 
 INHERITANCE_FIELD_NAME = "_cls"
+
+
+class ObjectIdStr(str):
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        if not isinstance(v, ObjectId):
+            raise TypeError("ObjectId required")
+        return str(v)
+
+
+class PydanticObjectId(ObjectId):
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        if not isinstance(v, ObjectId):
+            raise TypeError("ObjectId required")
+        return v
 
 
 class Document(BaseModel):
@@ -29,7 +55,7 @@ class Document(BaseModel):
             )
         super().__init__(*args, **kwargs)
 
-    def create(self, db: Any, get_obj=True) -> Any:
+    def create(self, get_obj=True) -> Any:
         doc_name, child = _get_doc_name(self.__class__)
         data = self.dict(exclude={"id"})
         if child is not None:
@@ -44,24 +70,24 @@ class Document(BaseModel):
             return obj
         return inserted_id
 
-    def update(self, db: Any, data):
+    def update(self, data):
         doc_name, _ = _get_doc_name(self.__class__)
         updated = db[doc_name].update_one({"_id": self.id}, data)
         return updated
 
-    def delete(self, db: Any):
+    def delete(self):
         doc_name, _ = _get_doc_name(self.__class__)
         return db[doc_name].delete_one({"_id": self.id})
 
     @classmethod
-    def find(cls, db: Any, filter: dict = {}):
+    def find(cls, filter: dict = {}):
         doc_name, child = _get_doc_name(cls)
         if child is not None:
             filter[f"{INHERITANCE_FIELD_NAME}"] = child
         return db[doc_name].find(filter)
 
     @classmethod
-    def find_one(cls, db: Any, filter: dict):
+    def find_one(cls, filter: dict):
         doc_name, child = _get_doc_name(cls)
         if child is not None:
             filter[f"{INHERITANCE_FIELD_NAME}"] = child
@@ -70,22 +96,22 @@ class Document(BaseModel):
             return cls(**data)
 
     @classmethod
-    def update_one(cls, db: Any, filter: dict = {}, data: dict = {}, **kwargs):
+    def update_one(cls, filter: dict = {}, data: dict = {}, **kwargs):
         doc_name, child = _get_doc_name(cls)
         if child is not None:
             filter[f"{INHERITANCE_FIELD_NAME}"] = child
-        data = db[doc_name].update_one(filter, data, **kwargs)
+        db[doc_name].update_one(filter, data, **kwargs)
         return True
 
     @classmethod
-    def update_many(cls, db: Any, filter: dict = {}, data: dict = {}, **kwargs):
+    def update_many(cls, filter: dict = {}, data: dict = {}, **kwargs):
         doc_name, child = _get_doc_name(cls)
         if child is not None:
             filter[f"{INHERITANCE_FIELD_NAME}"] = child
         return db[doc_name].update_many(filter, data, **kwargs)
 
     @classmethod
-    def aggregate(cls, db: Any, pipeline: List[Any]):
+    def aggregate(cls, pipeline: List[Any]):
         doc_name, _ = _get_doc_name(cls)
         return db[doc_name].aggregate(pipeline)
 

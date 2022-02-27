@@ -14,7 +14,6 @@ from app.base.config import (
     SECRET_KEY,
     ALGORITHM,
 )
-from app.base.dependencies import get_db
 from app.user.models import User
 from app.user.query import get_user
 from .schemas import TokenData
@@ -41,9 +40,9 @@ async def get_authenticated_token(token: str = Depends(oauth2_scheme)):
 
 
 async def get_authenticated_user(
-    db: Any = Depends(get_db), token_data: TokenData = Depends(get_authenticated_token)
+    token_data: TokenData = Depends(get_authenticated_token)
 ):
-    user = get_user(db, username=token_data.username)
+    user = get_user(username=token_data.username)
     if user is None:
         raise credentials_exception
     if user.is_active is False:
@@ -52,10 +51,10 @@ async def get_authenticated_user(
 
 
 async def get_admin_user(
-    db: Any = Depends(get_db), token_data: TokenData = Depends(get_authenticated_token)
+    token_data: TokenData = Depends(get_authenticated_token)
 ):
     # user = User.objects(username=token_data.username, role=UserRoles.ADMIN).first()
-    user = get_user(db, username=token_data.username, role=UserRoles.ADMIN)
+    user = get_user(username=token_data.username, role=UserRoles.ADMIN)
     if user is None:
         raise credentials_exception
     if user.is_active is False:

@@ -10,6 +10,7 @@ __testing__/**
 **.out
 **.exe
 **.txt
+**/firebase-*.json
 
 
 # ============================== Python ==============================
@@ -30,7 +31,7 @@ pip-delete-this-directory.txt
 
 # ============================== Editor's ==============================
 # Visual Studio Code
-.vscode/
+# .vscode/
 .vscode/**
 !.vscode/settings.json
 !.vscode/tasks.json

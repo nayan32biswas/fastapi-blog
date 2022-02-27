@@ -1,6 +1,4 @@
 from datetime import datetime
-from typing import Any
-
 
 from fastapi import (
     Depends,
@@ -13,7 +11,6 @@ from bson.objectid import ObjectId
 
 
 from app.auth.dependencies import get_authenticated_user
-from app.base.dependencies import get_db
 from app.base.query import get_object_or_404
 from app.user.models import User
 
@@ -29,13 +26,10 @@ def create_post_comment(
     post_id: str,
     description: str = Form(...),
     user: User = Depends(get_authenticated_user),
-    db: Any = Depends(get_db),
 ):
-    post = get_object_or_404(db, Post, id=post_id)
+    post = get_object_or_404(Post, id=post_id)
     raise NotImplementedError()
-    comment = Comment(user_id=user.id, post_id=post.id, description=description).create(
-        db
-    )
+    comment = Comment(user_id=user.id, post_id=post.id, description=description).create()
     return comment
 
 
@@ -45,12 +39,11 @@ def update_comment(
     comment_id: str,
     description: str = Form(...),
     user: User = Depends(get_authenticated_user),
-    db: Any = Depends(get_db),
 ):
-    comment = get_object_or_404(db, Comment, id=comment_id, post=post_id, user=user)
+    comment = get_object_or_404(Comment, id=comment_id, post=post_id, user=user)
     raise NotImplementedError()
     comment.update(
-        db, {"$set": {"description": description, "updated_at": datetime.utcnow()}}
+        {"$set": {"description": description, "updated_at": datetime.utcnow()}}
     )
 
     return CommentOut.from_orm(comment)
@@ -64,17 +57,15 @@ def delete_comment(
     post_id: str,
     comment_id: str,
     user: User = Depends(get_authenticated_user),
-    db: Any = Depends(get_db),
 ):
     comment = get_object_or_404(
-        db,
         Comment,
         id=comment_id,
         post=post_id,
         user=user,
     )
     raise NotImplementedError()
-    comment.delete(db)
+    comment.delete()
 
     return {"message": "Delete"}
 
@@ -88,9 +79,8 @@ def create_child_comment(
     comment_id: str,
     description: str = Form(...),
     user: User = Depends(get_authenticated_user),
-    db: Any = Depends(get_db),
 ):
-    comment = get_object_or_404(db, Comment, id=comment_id, post=post_id, user=user)
+    comment = get_object_or_404(Comment, id=comment_id, post=post_id, user=user)
     raise NotImplementedError()
     child_comment = EmbeddedComment(user_id=user.id, description=description)
     comment.update(push__childs=child_comment)
@@ -108,10 +98,8 @@ def update_child_comment(
     child_comment_id: str,
     content: str = Form(...),
     user: User = Depends(get_authenticated_user),
-    db: Any = Depends(get_db),
 ):
     _ = get_object_or_404(
-        db,
         Comment,
         id=comment_id,
         post_id=post_id,
@@ -136,7 +124,6 @@ def update_child_comment(
     # )
     """As equivalent as __raw__ query"""
     Comment.update_one(
-        db,
         {"id": comment_id, "post_id": post_id, "childs__id": child_comment_id},
         {
             "set__childs__S__content": content,
@@ -145,7 +132,6 @@ def update_child_comment(
     )
 
     comment = Comment.aggregate(
-        db,
         [
             {"$match": {"_id": comment_id, "childs.id": ObjectId(child_comment_id)}},
             {
@@ -181,10 +167,8 @@ def delete_child_comment(
     comment_id: str,
     child_comment_id: str,
     user: User = Depends(get_authenticated_user),
-    db: Any = Depends(get_db),
 ):
     _ = get_object_or_404(
-        db,
         Comment,
         id=comment_id,
         post=post_id,
@@ -193,7 +177,6 @@ def delete_child_comment(
     )
     raise NotImplementedError()
     Comment.update_one(
-        db,
         {"_idid": comment_id, "post": post_id},
         {"pull__childs__id": child_comment_id},
     )

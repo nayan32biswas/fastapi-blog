@@ -3,7 +3,6 @@ from typing import Any
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
-from pymongo import MongoClient
 
 from app.base import routers as base_routers
 from app.auth import routers as auth_routers
@@ -25,13 +24,16 @@ config.init_firebase_auth()
 
 @app.on_event("startup")
 async def startup_db_client():
-    app.mongo_client = MongoClient(config.DB_URL)
-    app.db = app.mongo_client[config.DB_NAME]
+    # app.mongo_client, app.db = config.get_mongo_client_and_db()
+    pass
 
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
-    app.mongo_client.close()
+    from app.odm.models import mongo_client
+
+    mongo_client.close()
+    # app.mongo_client.close()
 
 
 app.include_router(base_routers.router, tags=["default"])

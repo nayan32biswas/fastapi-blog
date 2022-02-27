@@ -1,0 +1,16 @@
+{
+  "recommendations": [
+    // Common Tools
+    "esbenp.prettier-vscode",
+    "eamodio.gitlens",
+    "redhat.vscode-yaml",
+    "yzhang.markdown-all-in-one",
+    "coenraads.bracket-pair-colorizer",
+    "zhuangtongfa.material-theme",
+    "visualstudioexptteam.vscodeintellicode",
+    // Python Support
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "magicstack.magicpython"
+  ]
+}

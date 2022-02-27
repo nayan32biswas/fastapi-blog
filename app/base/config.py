@@ -2,6 +2,8 @@ from datetime import timedelta
 import os
 from pathlib import Path
 
+from pymongo import MongoClient
+
 from .config_utils import comma_separated_str_to_list, parse_redis_url
 
 
@@ -29,8 +31,13 @@ FIREBASE_ACCOUNT_CREDENTIAL_PATH = os.environ.get(
 )
 
 
+def get_mongo_client_and_db():
+    client = MongoClient(DB_URL)
+    db = client[DB_NAME]
+    return client, db
+
+
 def init_firebase_auth():
-    from firebase_admin import credentials
     import firebase_admin
 
     if FIREBASE_ACCOUNT_CREDENTIAL_PATH is None:
@@ -44,7 +51,7 @@ def init_firebase_auth():
         raise Exception("Invalid Firebase Credintial path")
 
     try:
-        cred = credentials.Certificate(FIREBASE_ACCOUNT_CREDENTIALS)
+        cred = firebase_admin.credentials.Certificate(FIREBASE_ACCOUNT_CREDENTIALS)
         firebase_admin.initialize_app(credential=cred)
         print("\tFirebase init")
     except Exception as e:

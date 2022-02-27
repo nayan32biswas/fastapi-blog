@@ -11,7 +11,7 @@ from app.auth.utils import (
     create_access_token,
     create_refresh_token,
 )
-from app.base.dependencies import get_db
+from app.odm.dependencies import get_db
 from app.user.query import get_user
 from .models import User
 from .schemas import UserBase, UserCreate
@@ -26,11 +26,11 @@ async def get_me(user: User = Depends(get_authenticated_user)):
 
 
 @router.post("/v1/registration/")
-async def registration(new_user: UserCreate, db: Any = Depends(get_db)):
+async def registration(new_user: UserCreate):
     # user = User.objects(
     #     Q(username=new_user.username) | Q(email=new_user.email)
     # ).first()
-    user = get_user(db, or_q={"username": new_user.username, "email": new_user.email})
+    user = get_user(or_q={"username": new_user.username, "email": new_user.email})
     if user is not None:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -38,7 +38,7 @@ async def registration(new_user: UserCreate, db: Any = Depends(get_db)):
         )
     user = User(**new_user.dict())
     user.password = get_password_hash(user.password)
-    user.create(db)
+    user.create()
 
     return JSONResponse(
         status_code=status.HTTP_201_CREATED, content=UserBase.from_orm(new_user).dict()
@@ -46,11 +46,9 @@ async def registration(new_user: UserCreate, db: Any = Depends(get_db)):
 
 
 @router.post("/v1/login/")
-async def login(
-    db: Any = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
-):
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     # Extend or reimplement OAuth2PasswordRequestForm to change authentication format or add additional fields
-    user = authenticate_user(db, form_data.username, form_data.password)
+    user = authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -66,7 +64,9 @@ async def login(
 
 
 @router.post("/v1/firebase/")
-async def firebase(fire_token: str = Form(...), db: Any = Depends(get_db)):
+async def firebase(
+    fire_token: str = Form(...),
+):
     fire_payload = decode_firetoken(fire_token)
     if fire_payload is None:
         raise HTTPException(

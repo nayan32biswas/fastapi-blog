@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
-from app.base.models import Document
+from app.odm.models import Document
 from app.base.utils.local_cache import RedisHelper
 from .permission import PermissionType, PermissionValueChar
 

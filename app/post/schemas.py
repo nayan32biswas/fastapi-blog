@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, Field
 
-from app.base.types import ObjectIdStr
+from app.odm.models import ObjectIdStr
 from app.user.schemas import MinimalUser
 
 

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Optional, List
+from typing import Optional, List
 
 
 from fastapi import (
@@ -15,7 +15,6 @@ from fastapi import (
 
 
 from app.auth.dependencies import get_authenticated_user, has_post_delete_permission
-from app.base.dependencies import get_db
 from app.base.query import get_object_or_404
 from app.base.utils.file import save_image
 from app.user.models import User
@@ -48,7 +47,6 @@ def create_post(
     is_publish: bool = Form(False),
     image: UploadFile = File(None),
     user: User = Depends(get_authenticated_user),
-    db: Any = Depends(get_db),
 ):
     # raise NotImplementedError()
     image_path = save_image(image, folder="post")
@@ -61,7 +59,7 @@ def create_post(
         image=image_path,
     )
     print(post)
-    post.create(db)
+    post.create()
     return PostDetailsOut.from_orm(post)
 
 
@@ -74,9 +72,8 @@ def update_post(
     is_publish: bool = Form(None),
     image: Optional[UploadFile] = None,
     user: User = Depends(get_authenticated_user),
-    db: Any = Depends(get_db),
 ):
-    post = get_object_or_404(db, Post, id=post_id)
+    post = get_object_or_404(Post, id=post_id)
     raise NotImplementedError()
     if user.id != post.user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
@@ -92,13 +89,13 @@ def update_post(
     if is_publish is not None:
         update_data["is_publish"] = is_publish
     post.update(**update_data)
-    post = get_object_or_404(db, Post, id=post_id)
+    post = get_object_or_404(Post, id=post_id)
     return PostDetailsOut.from_orm(post)
 
 
 @router.get("/api/v1/posts/", status_code=status.HTTP_200_OK)
 def fetch_posts(
-    user_id: str = None,
+    user_id: Optional[str] = None,
     limit: int = 10,
     page: int = 1,
     query: Optional[str] = Query(
@@ -115,7 +112,6 @@ def fetch_posts(
         deprecated=True,
     ),
     _: Optional[str] = Query(None, include_in_schema=False),
-    db: Any = Depends(get_db),
 ):
     offset = (page - 1) * limit
     search_dict = {}
@@ -128,7 +124,7 @@ def fetch_posts(
         pass
     raise NotImplementedError()
     posts = (
-        Post.find(db, search_dict)
+        Post.find(search_dict)
         .order_by(order_by_dict)
         .skip(offset)
         .limit(limit)
@@ -139,12 +135,14 @@ def fetch_posts(
 
 
 @router.get("/api/v1/posts/{post_id}/")
-def fetch_post_details(post_id: str, db: Any = Depends(get_db)):
-    post = get_object_or_404(db, Post, id=post_id)
+def fetch_post_details(
+    post_id: str,
+):
+    post = get_object_or_404(Post, id=post_id)
     raise NotImplementedError()
     post.comments = [
         comment
-        for comment in Comment.find(db, {"post_id": post_id}).select_related(max_depth=2)
+        for comment in Comment.find({"post_id": post_id}).select_related(max_depth=2)
     ]
     return PostDetailsOut.from_orm(post)
 
@@ -156,12 +154,11 @@ def fetch_post_details(post_id: str, db: Any = Depends(get_db)):
 def delete_post(
     post_id: str,
     user: User = Depends(get_authenticated_user),
-    db: Any = Depends(get_db),
 ):
     raise NotImplementedError()
     if has_post_delete_permission(user) is not True:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-    post = get_object_or_404(db, Post, id=post_id, user_id=user.id)
-    post.delete(db)
+    post = get_object_or_404(Post, id=post_id, user_id=user.id)
+    post.delete()
     return {"message": "Delete"}

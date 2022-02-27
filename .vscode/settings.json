@@ -1,0 +1,19 @@
+{
+  // Python
+  "python.linting.pylintEnabled": false,
+  "python.linting.flake8Enabled": true,
+  "python.linting.enabled": true,
+  "python.linting.flake8Args": [
+    "--max-line-length=255"
+    //   "--ignore=E402,F403,F405"
+  ], // will display error
+  "python.formatting.provider": "black",
+  "python.formatting.blackArgs": ["--line-length", "90"], // formate with max 90 char
+  "python.analysis.typeCheckingMode": "basic",
+  // VS Code
+  "editor.fontSize": 16,
+  "editor.renderWhitespace": "all",
+  // VS Code Ligature
+  "editor.fontFamily": "'Fira Code'",
+  "editor.fontLigatures": "'ss01', 'ss02', 'ss03', 'ss04', 'ss05', 'ss06', 'zero', 'onum'"
+}

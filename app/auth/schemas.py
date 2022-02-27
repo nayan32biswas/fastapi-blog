@@ -1,7 +1,7 @@
 from typing import Optional, List
 from pydantic import BaseModel
 
-from app.base.types import ObjectIdStr
+from app.odm.models import ObjectIdStr
 from .permission import PermissionValueChar, PermissionType
 
 

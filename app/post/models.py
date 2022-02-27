@@ -4,8 +4,8 @@ from typing import List, Optional
 from bson.objectid import ObjectId
 from pydantic import BaseModel, Field
 
-from app.base.models import Document
-from app.base.types import PydanticObjectId
+from app.odm.models import Document
+from app.odm.models import PydanticObjectId
 
 
 class Post(Document):

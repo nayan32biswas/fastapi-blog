@@ -9,7 +9,7 @@ x-volumes: &env-volume
   MONGO_DB_NAME: "blog_db"
   REDIS_LOCAL_URL: "redis://redis:6379/1"
 
-  FIREBASE_ACCOUNT_CREDENTIAL_PATH: ".vscode/firebase-credentials.json"
+  FIREBASE_ACCOUNT_CREDENTIAL_PATH: "firebase-credentials.json"
 
 
 services:

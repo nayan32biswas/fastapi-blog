@@ -25,8 +25,8 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-def authenticate_user(db, username: str, password: str) -> Optional[User]:
-    user = get_user(db, username=username)
+def authenticate_user(username: str, password: str) -> Optional[User]:
+    user = get_user(username=username)
     if not user:
         return None
     if not verify_password(password, user.password):

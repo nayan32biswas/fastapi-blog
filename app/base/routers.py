@@ -1,12 +1,10 @@
 import os
-from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, status, Request, UploadFile
 from fastapi.responses import FileResponse
 
 from app.auth.dependencies import get_authenticated_token
 from app.base.config import MEDIA_ROOT
-from app.base.dependencies import get_db
 from app.base.utils.file import save_image
 from app.auth.schemas import Token
 from . import ws_router
@@ -20,7 +18,7 @@ router.include_router(ws_router.router)
 
 
 @router.get("/", status_code=status.HTTP_200_OK)
-def home(db: Any = Depends(get_db)):
+def home():
     return {"message": "Hello World"}
 
 

@@ -3,8 +3,8 @@ from typing import List, Optional
 
 from pydantic import Field
 
-from app.base.models import Document
-from app.base.types import ObjectIdStr
+from app.odm.models import Document
+from app.odm.models import ObjectIdStr
 from ..auth.permission import UserRoles
 
 

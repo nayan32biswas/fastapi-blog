@@ -45,7 +45,7 @@ class Document(BaseModel):
 
     @classmethod
     def _db(cls) -> str:
-        doc_name, _ = _get_doc_name(cls)
+        doc_name, _ = _get_collection_name(cls)
         return doc_name
 
     def __init__(self, *args, **kwargs):
@@ -56,7 +56,7 @@ class Document(BaseModel):
         super().__init__(*args, **kwargs)
 
     def create(self, get_obj=True) -> Any:
-        doc_name, child = _get_doc_name(self.__class__)
+        doc_name, child = _get_collection_name(self.__class__)
         data = self.dict(exclude={"id"})
         if child is not None:
             data[f"{INHERITANCE_FIELD_NAME}"] = child
@@ -71,24 +71,24 @@ class Document(BaseModel):
         return inserted_id
 
     def update(self, data):
-        doc_name, _ = _get_doc_name(self.__class__)
+        doc_name, _ = _get_collection_name(self.__class__)
         updated = db[doc_name].update_one({"_id": self.id}, data)
         return updated
 
     def delete(self):
-        doc_name, _ = _get_doc_name(self.__class__)
+        doc_name, _ = _get_collection_name(self.__class__)
         return db[doc_name].delete_one({"_id": self.id})
 
     @classmethod
     def find(cls, filter: dict = {}):
-        doc_name, child = _get_doc_name(cls)
+        doc_name, child = _get_collection_name(cls)
         if child is not None:
             filter[f"{INHERITANCE_FIELD_NAME}"] = child
         return db[doc_name].find(filter)
 
     @classmethod
     def find_one(cls, filter: dict):
-        doc_name, child = _get_doc_name(cls)
+        doc_name, child = _get_collection_name(cls)
         if child is not None:
             filter[f"{INHERITANCE_FIELD_NAME}"] = child
         data = db[doc_name].find_one(filter)
@@ -97,7 +97,7 @@ class Document(BaseModel):
 
     @classmethod
     def update_one(cls, filter: dict = {}, data: dict = {}, **kwargs):
-        doc_name, child = _get_doc_name(cls)
+        doc_name, child = _get_collection_name(cls)
         if child is not None:
             filter[f"{INHERITANCE_FIELD_NAME}"] = child
         db[doc_name].update_one(filter, data, **kwargs)
@@ -105,23 +105,23 @@ class Document(BaseModel):
 
     @classmethod
     def update_many(cls, filter: dict = {}, data: dict = {}, **kwargs):
-        doc_name, child = _get_doc_name(cls)
+        doc_name, child = _get_collection_name(cls)
         if child is not None:
             filter[f"{INHERITANCE_FIELD_NAME}"] = child
         return db[doc_name].update_many(filter, data, **kwargs)
 
     @classmethod
     def aggregate(cls, pipeline: List[Any]):
-        doc_name, _ = _get_doc_name(cls)
+        doc_name, _ = _get_collection_name(cls)
         return db[doc_name].aggregate(pipeline)
 
     @property
     def ref(self):
-        doc_name, _ = _get_doc_name(self.__class__)
+        doc_name, _ = _get_collection_name(self.__class__)
         return PydanticDBRef(collection=doc_name, id=self.id)
 
 
-def convert_model_to_doc(model: Any) -> str:
+def convert_model_to_collection(model: Any) -> str:
     if hasattr(model.Config, "NAME") and model.Config.NAME is not None:
         """By default model has Config in Basemodel"""
         return model.Config.NAME
@@ -129,7 +129,7 @@ def convert_model_to_doc(model: Any) -> str:
         return camel_to_snake(model.__name__)
 
 
-def _get_doc_name(model: Any) -> Tuple[str, Optional[str]]:
+def _get_collection_name(model: Any) -> Tuple[str, Optional[str]]:
     """
     Return (docname, None).
     Return (parent docname, child docname) if allow_inheritance
@@ -143,9 +143,9 @@ def _get_doc_name(model: Any) -> Tuple[str, Optional[str]]:
             raise Exception(
                 f"Invalid model inheritance. {base_model} does not allow model inheritance."
             )
-        return convert_model_to_doc(base_model), convert_model_to_doc(model)
+        return convert_model_to_collection(base_model), convert_model_to_collection(model)
     else:
-        return convert_model_to_doc(model), None
+        return convert_model_to_collection(model), None
 
 
 class PydanticDBRef(DBRef):
@@ -159,5 +159,5 @@ class PydanticDBRef(DBRef):
             return v
         if not issubclass(v.__class__, Document) or not hasattr(v, "id"):
             raise TypeError("Invalid Document Model")
-        doc_name, _ = _get_doc_name(v.__class__)
+        doc_name, _ = _get_collection_name(v.__class__)
         return DBRef(collection=doc_name, id=v.id)

@@ -2,8 +2,6 @@ from datetime import timedelta
 import os
 from pathlib import Path
 
-from pymongo import MongoClient
-
 from .config_utils import comma_separated_str_to_list, parse_redis_url
 
 
@@ -29,12 +27,6 @@ REDIS_DEFAULT_TIMEOUT = timedelta(hours=1)
 FIREBASE_ACCOUNT_CREDENTIAL_PATH = os.environ.get(
     "FIREBASE_ACCOUNT_CREDENTIAL_PATH", None
 )
-
-
-def get_mongo_client_and_db():
-    client = MongoClient(DB_URL)
-    db = client[DB_NAME]
-    return client, db
 
 
 def init_firebase_auth():

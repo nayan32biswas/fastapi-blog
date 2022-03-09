@@ -19,9 +19,11 @@ class ObjectIdStr(str):
 
     @classmethod
     def validate(cls, v):
-        if not isinstance(v, ObjectId):
-            raise TypeError("ObjectId required")
-        return str(v)
+        if isinstance(v, str):
+            return v
+        elif isinstance(v, ObjectId):
+            return str(v)
+        raise TypeError("Invalid ObjectId")
 
 
 class PydanticObjectId(ObjectId):
@@ -31,9 +33,11 @@ class PydanticObjectId(ObjectId):
 
     @classmethod
     def validate(cls, v):
-        if not isinstance(v, ObjectId):
-            raise TypeError("ObjectId required")
-        return v
+        if isinstance(v, ObjectId):
+            return v
+        elif isinstance(v, str):
+            return ObjectId(v)
+        raise TypeError("Invalid ObjectId")
 
 
 class Document(BaseModel):
@@ -58,7 +62,7 @@ class Document(BaseModel):
         collection_name, child = _get_collection_name(self.__class__)
         data = self.dict(exclude={"id"})
         if child is not None:
-            data[f"{INHERITANCE_FIELD_NAME}"] = child
+            data = {f"{INHERITANCE_FIELD_NAME}": child, **data}
 
         inserted_id = db[collection_name].insert_one(data).inserted_id
         if get_obj is True:
@@ -69,9 +73,14 @@ class Document(BaseModel):
             return obj
         return inserted_id
 
-    def update(self, data):
+    def update(self, raw: dict = {}):
         collection_name, _ = _get_collection_name(self.__class__)
-        updated = db[collection_name].update_one({"_id": self.id}, data)
+        filter = {"_id": self.id}
+        if raw:
+            updated = db[collection_name].update_one(filter, raw)
+        else:
+            data = self.dict(exclude={"id"})
+            updated = db[collection_name].update_one(filter, {"$set": data})
         return updated
 
     def delete(self):
@@ -79,20 +88,34 @@ class Document(BaseModel):
         return db[collection_name].delete_one({"_id": self.id})
 
     @classmethod
-    def find(cls, filter: dict = {}):
+    def find(cls, filter: dict = {}, projection: dict = {}):
         collection_name, child = _get_collection_name(cls)
         if child is not None:
             filter[f"{INHERITANCE_FIELD_NAME}"] = child
+        if projection:
+            return db[collection_name].find(filter, projection)
         return db[collection_name].find(filter)
 
     @classmethod
-    def find_one(cls, filter: dict):
+    def find_one(cls, filter: dict, raw=False):
         collection_name, child = _get_collection_name(cls)
         if child is not None:
             filter[f"{INHERITANCE_FIELD_NAME}"] = child
         data = db[collection_name].find_one(filter)
         if data:
-            return cls(**data)
+            if raw:
+                return data
+            else:
+                return cls(**data)
+        else:
+            return None
+
+    @classmethod
+    def count_documents(cls, filter: dict = {}, **kwargs):
+        collection_name, child = _get_collection_name(cls)
+        if child is not None:
+            filter[f"{INHERITANCE_FIELD_NAME}"] = child
+        return db[collection_name].count_documents(filter, **kwargs)
 
     @classmethod
     def update_one(cls, filter: dict = {}, data: dict = {}, **kwargs):

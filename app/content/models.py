@@ -17,7 +17,7 @@ class Content(Document):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:
-        NAME = "content"
+        collection_name = "content"
         allow_inheritance = True
 
 

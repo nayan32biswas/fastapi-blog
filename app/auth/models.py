@@ -21,7 +21,7 @@ class PermissionGroup(Document):
     permissions: List[Permission] = []
 
     class Config:
-        NAME = "permission_group"
+        collection_name = "permission_group"
 
 
 authentication_key = "local:auth:permissions"

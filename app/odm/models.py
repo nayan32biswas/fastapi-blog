@@ -44,7 +44,8 @@ class Document(BaseModel):
     id: PydanticObjectId = Field(default_factory=ObjectId, alias="_id")
 
     class Config:
-        NAME = None
+        collection_name = None
+        allow_inheritance = False
 
     @classmethod
     def _db(cls) -> str:
@@ -144,9 +145,12 @@ class Document(BaseModel):
 
 
 def convert_model_to_collection(model: Any) -> str:
-    if hasattr(model.Config, "NAME") and model.Config.NAME is not None:
+    if (
+        hasattr(model.Config, "collection_name")
+        and model.Config.collection_name is not None
+    ):
         """By default model has Config in Basemodel"""
-        return model.Config.NAME
+        return model.Config.collection_name
     else:
         return camel_to_snake(model.__name__)
 

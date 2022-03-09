@@ -25,7 +25,7 @@ class User(Document):
     image: Optional[str] = Field(default=None)
 
     class Config:
-        NAME = "user"
+        collection_name = "user"
 
 
 # class EmbeddedUser(EmbeddedDocument):

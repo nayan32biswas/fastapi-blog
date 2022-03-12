@@ -8,9 +8,9 @@ ENV PYTHONFAULTHANDLER=1 \
     PIP_DEFAULT_TIMEOUT=100
 
 WORKDIR /app/server/
-COPY requirements.txt /app/server/
+COPY requirements*.txt /app/server/
 
-RUN pip install -r requirements.txt;
+RUN pip install -r requirements-dev.txt;
 
 ADD . /app/server/
 

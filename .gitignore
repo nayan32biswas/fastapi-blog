@@ -9,7 +9,6 @@ __testing__/**
 **.sock
 **.out
 **.exe
-**.txt
 **/firebase-*.json
 
 
@@ -20,6 +19,7 @@ __testing__/**
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
+.pytest_cache
 
 
 # ============================== Python Framework ==============================

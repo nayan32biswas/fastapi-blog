@@ -1,4 +1,6 @@
+import jwt
 from typing import Any
+
 from fastapi import (
     Depends,
     HTTPException,
@@ -6,10 +8,8 @@ from fastapi import (
 )
 from fastapi.security import OAuth2PasswordBearer
 
-from jose import JWTError, jwt
 from app.auth.models import get_cached_or_db_permissions
 from app.auth.permission import PermissionType, PermissionValueChar, UserRoles
-
 from app.base.config import (
     SECRET_KEY,
     ALGORITHM,
@@ -34,7 +34,7 @@ async def get_authenticated_token(token: str = Depends(oauth2_scheme)):
         if username is None:
             raise credentials_exception
         token_data = TokenData(username=username)
-    except JWTError:
+    except Exception:
         raise credentials_exception
     return token_data
 

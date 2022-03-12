@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
+import jwt
 from typing import Optional
 
-from jose import jwt
 from passlib.context import CryptContext
 
 from app.base.config import (

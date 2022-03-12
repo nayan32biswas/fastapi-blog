@@ -1,4 +1,3 @@
-from typing import Any
 from fastapi import APIRouter, Depends, Form, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
@@ -11,7 +10,6 @@ from app.auth.utils import (
     create_access_token,
     create_refresh_token,
 )
-from app.odm.dependencies import get_db
 from app.user.query import get_user
 from .models import User
 from .schemas import UserBase, UserCreate

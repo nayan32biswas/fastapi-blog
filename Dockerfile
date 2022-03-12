@@ -13,4 +13,3 @@ COPY requirements*.txt /app/server/
 RUN pip install -r requirements-dev.txt;
 
 ADD . /app/server/
-

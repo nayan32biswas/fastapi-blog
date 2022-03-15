@@ -5,6 +5,8 @@ from bson.dbref import DBRef
 
 from pydantic import BaseModel, Field
 from pymongo import DESCENDING
+from pymongo.command_cursor import CommandCursor
+from pymongo.cursor import Cursor
 
 from .utils import camel_to_snake
 from .connection import get_mongo_client_and_db
@@ -76,7 +78,7 @@ class Document(BaseModel):
             return obj
         return inserted_id
 
-    def update(self, raw: dict = {}):
+    def update(self, raw: dict = {}, load_data=False) -> Optional[Any]:
         collection_name, _ = _get_collection_name(self.__class__)
         filter = {"_id": self.id}
         if raw:
@@ -87,16 +89,23 @@ class Document(BaseModel):
             datetime_now = datetime.utcnow()
             updated_data["$set"]["updated_at"] = datetime_now
             self.__dict__.update({"updated_at": datetime_now})
+        if load_data is True:
+            updated = db[collection_name].find_one_and_update(filter, updated_data)
+            if updated:
+                self.__dict__.update(updated)
+                return self
+            else:
+                return None
+        else:
+            updated = db[collection_name].update_one(filter, updated_data)
+            return updated
 
-        updated = db[collection_name].update_one(filter, updated_data)
-        return updated
-
-    def delete(self):
+    def delete(self) -> Optional[Any]:
         collection_name, _ = _get_collection_name(self.__class__)
         return db[collection_name].delete_one({"_id": self.id})
 
     @classmethod
-    def find(cls, filter: dict = {}, projection: dict = {}):
+    def find(cls, filter: dict = {}, projection: dict = {}) -> Cursor:
         collection_name, child = _get_collection_name(cls)
         if child is not None:
             filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
@@ -105,7 +114,7 @@ class Document(BaseModel):
         return db[collection_name].find(filter)
 
     @classmethod
-    def raw_or_model(cls, data, raw):
+    def raw_or_model(cls, data, raw) -> Optional[Any]:
         if raw:
             return data
         else:
@@ -141,36 +150,37 @@ class Document(BaseModel):
             return None
 
     @classmethod
-    def count_documents(cls, filter: dict = {}, **kwargs):
+    def count_documents(cls, filter: dict = {}, **kwargs) -> int:
         collection_name, child = _get_collection_name(cls)
         if child is not None:
             filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
         return db[collection_name].count_documents(filter, **kwargs)
 
     @classmethod
-    def exists(cls, filter: dict = {}, **kwargs):
+    def exists(cls, filter: dict = {}, **kwargs) -> bool:
         collection_name, child = _get_collection_name(cls)
         if child is not None:
             filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
         return db[collection_name].count_documents(filter, **kwargs, limit=1) >= 1
 
     @classmethod
-    def update_one(cls, filter: dict = {}, data: dict = {}, **kwargs):
+    def update_one(cls, filter: dict = {}, data: dict = {}, **kwargs) -> int:
         collection_name, child = _get_collection_name(cls)
         if child is not None:
             filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
-        db[collection_name].update_one(filter, data, **kwargs)
-        return True
+        result = db[collection_name].update_one(filter, data, **kwargs)
+        return result.matched_count
 
     @classmethod
-    def update_many(cls, filter: dict = {}, data: dict = {}, **kwargs):
+    def update_many(cls, filter: dict = {}, data: dict = {}, **kwargs) -> int:
         collection_name, child = _get_collection_name(cls)
         if child is not None:
             filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
-        return db[collection_name].update_many(filter, data, **kwargs)
+        result = db[collection_name].update_many(filter, data, **kwargs)
+        return result.matched_count
 
     @classmethod
-    def aggregate(cls, pipeline: List[Any]):
+    def aggregate(cls, pipeline: List[Any]) -> CommandCursor:
         collection_name, _ = _get_collection_name(cls)
         return db[collection_name].aggregate(pipeline)
 

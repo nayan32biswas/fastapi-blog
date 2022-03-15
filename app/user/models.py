@@ -2,8 +2,9 @@ from datetime import datetime
 from typing import List, Optional
 
 from pydantic import Field
+from pymongo import ASCENDING
 
-from app.odm.models import Document
+from app.odm.models import CustomIndexModel, Document
 from app.odm.models import ObjectIdStr
 from ..auth.permission import UserRoles
 
@@ -26,6 +27,10 @@ class User(Document):
 
     class Config:
         collection_name = "user"
+        indexes = (
+            CustomIndexModel([("username", ASCENDING)], unique=True),
+            CustomIndexModel([("email", ASCENDING)], unique=True),
+        )
 
 
 # class EmbeddedUser(EmbeddedDocument):

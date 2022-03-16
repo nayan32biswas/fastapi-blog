@@ -4,7 +4,7 @@ from typing import List, Optional
 from pydantic import Field
 from pymongo import ASCENDING
 
-from app.odm.models import CustomIndexModel, Document
+from app.odm.models import ODMIndexModel, Document
 from app.odm.models import ObjectIdStr
 from ..auth.permission import UserRoles
 
@@ -28,10 +28,11 @@ class User(Document):
     class Config:
         collection_name = "user"
         indexes = (
-            CustomIndexModel([("username", ASCENDING)], unique=True),
-            CustomIndexModel([("email", ASCENDING)], unique=True),
-            CustomIndexModel(
-                [("first_name", ASCENDING), ("last_name", ASCENDING)], unique=True
+            ODMIndexModel([("username", ASCENDING)], unique=True),
+            ODMIndexModel([("email", ASCENDING)], unique=True),
+            ODMIndexModel(
+                [("first_name", ASCENDING), ("last_name", ASCENDING)],
+                unique=True,
             ),
         )
 

@@ -6,16 +6,16 @@ from typing import List
 from .models import Document, _get_collection_name
 
 
-MIGRATIONS_PATH = "migrations"
-starint_of_migration_file = """from pymongo import IndexModel\n\n"""
+INDEXES_PATH = "indexes"
+starint_of_indexes_file = """from pymongo import IndexModel\n\n"""
 
 
-def get_migration_path():
+def get_indexes_path():
     path = Path(__file__).resolve().parent
-    migrations_path = os.path.join(path, MIGRATIONS_PATH)
-    if os.path.exists(migrations_path) is False:
-        os.mkdir(migrations_path)
-    return migrations_path
+    indexes_path = os.path.join(path, INDEXES_PATH)
+    if os.path.exists(indexes_path) is False:
+        os.mkdir(indexes_path)
+    return indexes_path
 
 
 def object_parser(operation):
@@ -28,14 +28,15 @@ def object_parser(operation):
     )
 
 
-def write_migration_file(operations):
-    migrations_path = get_migration_path()
-    init_file_path = os.path.join(migrations_path, "__init__.py")
+def write_indexes_file(operations):
+    indexes_path = get_indexes_path()
+    init_file_path = os.path.join(indexes_path, "__init__.py")
     data = ",".join([object_parser(operation) for operation in operations])
-    final_string = f"""{starint_of_migration_file}operations = [{data}]"""
+    final_string = f"""{starint_of_indexes_file}operations = [{data}]"""
     with open(init_file_path, "wb") as temp_file:
         temp_file.write(final_string.encode())
-    subprocess.run(["black", f"app/odm/{MIGRATIONS_PATH}/"])
+    # Format the indexes file code
+    subprocess.run(["black", f"app/odm/{INDEXES_PATH}/"])
 
 
 def get_indexes(model) -> List:
@@ -44,7 +45,7 @@ def get_indexes(model) -> List:
     return []
 
 
-def create_migrations():
+def create_indexes():
     operations = []
     for model in Document.__subclasses__():
         indexes = get_indexes(model)
@@ -60,4 +61,16 @@ def create_migrations():
                     indexes += get_indexes(child_model)
             operations.append(obj)
             # TODO: match with existing index and drop_index if remove from model
-    write_migration_file(operations)
+    write_indexes_file(operations)
+
+
+"""
+"python -m app.main createindexes" will create __init__.py inside indexess folder inside of odm module.
+
+The way of create_indexess works first it imports all child models of Document since it's the abstract parent model.
+Then retrieve all the child modules and will try to get indexes inside the Config class.
+All indexes objects should be inserted as it is into operations of __init__.py file.
+And format it with a "black" code formater.
+
+If some collection was deleted and indexes exists just don't do anything it will handle by DB admin.
+"""

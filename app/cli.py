@@ -1,16 +1,16 @@
 import typer
 
-from app.odm.create_migrations import create_migrations
-from app.odm.apply_migrations import apply_migrations
+from app.odm.create_indexes import create_indexes
+from app.odm.apply_indexes import apply_indexes
 
 app_typer = typer.Typer()
 
 
 @app_typer.command()
-def migrate(name: str):
-    apply_migrations()
+def applyindexes():
+    apply_indexes()
 
 
 @app_typer.command()
-def createmigrations():
-    create_migrations()
+def createindexes():
+    create_indexes()

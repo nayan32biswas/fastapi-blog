@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import Field
 from pymongo import ASCENDING
 
-from app.odm.models import CustomIndexModel, Document, PydanticDBRef
+from app.odm.models import ODMIndexModel, Document, PydanticDBRef
 from app.odm.models import PydanticObjectId
 
 
@@ -21,8 +21,8 @@ class Content(Document):
         collection_name = "content"
         allow_inheritance = True
         indexes = (
-            CustomIndexModel([("added_by_id", ASCENDING)]),
-            CustomIndexModel([("name", ASCENDING)], background=True, sparse=True),
+            ODMIndexModel([("added_by_id", ASCENDING)]),
+            ODMIndexModel([("name", ASCENDING)], background=True, sparse=True),
         )
 
 
@@ -32,7 +32,7 @@ class Course(Content):
 
     class Config:
         demo = "course"
-        indexes = (CustomIndexModel([("title", ASCENDING)], unique=True),)
+        indexes = (ODMIndexModel([("title", ASCENDING)], unique=True),)
 
 
 class Article(Document):

@@ -236,7 +236,7 @@ class PydanticDBRef(DBRef):
         return DBRef(collection=collection_name, id=v.id)
 
 
-class CustomIndexModel(IndexModel):
+class ODMIndexModel(IndexModel):
     _keys = []
     _kwargs = {}
 
@@ -246,9 +246,10 @@ class CustomIndexModel(IndexModel):
         super().__init__(keys, **kwargs)
 
     def __repr__(self) -> str:
-        kwargs_str = ",".join(
-            [f"{key}={self._kwargs[key]}" for key in self._kwargs.keys()]
-        )
-        if len(kwargs_str) > 0:
-            kwargs_str = "," + kwargs_str
+        kwargs_str = ""
+        for key in self._kwargs.keys():
+            value = self._kwargs[key]
+            if type(value) == str:
+                value = f"'{value}'"
+            kwargs_str += f",{key}={value}"
         return f"""IndexModel({self._keys}{kwargs_str})"""

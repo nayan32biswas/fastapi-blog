@@ -30,6 +30,7 @@ class User(Document):
         indexes = (
             ODMIndexModel([("username", ASCENDING)], unique=True),
             ODMIndexModel([("email", ASCENDING)], unique=True),
+            ODMIndexModel([("last_login", ASCENDING)]),
             ODMIndexModel(
                 [("first_name", ASCENDING), ("last_name", ASCENDING)],
                 unique=True,

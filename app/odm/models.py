@@ -237,19 +237,13 @@ class PydanticDBRef(DBRef):
 
 
 class ODMIndexModel(IndexModel):
-    _keys = []
-    _kwargs = {}
-
-    def __init__(self, keys, **kwargs):
-        self._keys = keys
-        self._kwargs = kwargs
-        super().__init__(keys, **kwargs)
-
     def __repr__(self) -> str:
+        keys = [(key, value) for key, value in self.document["key"].items()]
         kwargs_str = ""
-        for key in self._kwargs.keys():
-            value = self._kwargs[key]
+        for key, value in self.document.items():
+            if key == "key":
+                continue
             if type(value) == str:
                 value = f"'{value}'"
             kwargs_str += f",{key}={value}"
-        return f"""IndexModel({self._keys}{kwargs_str})"""
+        return f"""IndexModel({keys}{kwargs_str})"""

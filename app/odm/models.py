@@ -246,9 +246,9 @@ class CustomIndexModel(IndexModel):
         super().__init__(keys, **kwargs)
 
     def __repr__(self) -> str:
-        kwargs_str = ", ".join(
+        kwargs_str = ",".join(
             [f"{key}={self._kwargs[key]}" for key in self._kwargs.keys()]
         )
         if len(kwargs_str) > 0:
-            kwargs_str = ", " + kwargs_str
-        return f"""\n\t\t\tIndexModel({self._keys}{kwargs_str})"""
+            kwargs_str = "," + kwargs_str
+        return f"""IndexModel({self._keys}{kwargs_str})"""

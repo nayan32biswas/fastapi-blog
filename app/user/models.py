@@ -30,6 +30,9 @@ class User(Document):
         indexes = (
             CustomIndexModel([("username", ASCENDING)], unique=True),
             CustomIndexModel([("email", ASCENDING)], unique=True),
+            CustomIndexModel(
+                [("first_name", ASCENDING), ("last_name", ASCENDING)], unique=True
+            ),
         )
 
 

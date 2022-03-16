@@ -1,4 +1,5 @@
 import os
+import subprocess
 from pathlib import Path
 from typing import List
 
@@ -6,7 +7,7 @@ from .models import Document, _get_collection_name
 
 
 MIGRATIONS_PATH = "migrations"
-starint_of_migration_file = """from pymongo import IndexModel"""
+starint_of_migration_file = """from pymongo import IndexModel\n\n"""
 
 
 def get_migration_path():
@@ -18,7 +19,8 @@ def get_migration_path():
 
 
 def object_parser(operation):
-    return "\t" + str(
+    # return json.dumps(operation, indent=4, default=str)
+    return str(
         {
             "collection_name": operation["collection_name"],
             "create_indexes": [idx for idx in operation["create_indexes"]],
@@ -29,10 +31,11 @@ def object_parser(operation):
 def write_migration_file(operations):
     migrations_path = get_migration_path()
     init_file_path = os.path.join(migrations_path, "__init__.py")
-    data = ",\n".join([object_parser(operation) for operation in operations])
-    final_string = f"""{starint_of_migration_file}\n\n\noperations = [\n{data}\n]\n"""
+    data = ",".join([object_parser(operation) for operation in operations])
+    final_string = f"""{starint_of_migration_file}operations = [{data}]"""
     with open(init_file_path, "wb") as temp_file:
         temp_file.write(final_string.encode())
+    subprocess.run(["black", f"app/odm/{MIGRATIONS_PATH}/"])
 
 
 def get_indexes(model) -> List:

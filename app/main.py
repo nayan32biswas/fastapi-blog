@@ -57,3 +57,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(BaseHTTPMiddleware, dispatch=add_process_time_header)
+
+
+if __name__ == "__main__":
+    """CLI"""
+    from app.cli import app_typer
+
+    app_typer()

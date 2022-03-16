@@ -2,8 +2,9 @@ from datetime import datetime
 from typing import Optional
 
 from pydantic import Field
+from pymongo import ASCENDING
 
-from app.odm.models import Document, PydanticDBRef
+from app.odm.models import ODMIndexModel, Document, PydanticDBRef
 from app.odm.models import PydanticObjectId
 
 
@@ -19,13 +20,19 @@ class Content(Document):
     class Config:
         collection_name = "content"
         allow_inheritance = True
+        indexes = (
+            ODMIndexModel([("added_by_id", ASCENDING)]),
+            ODMIndexModel([("name", ASCENDING)], background=True, sparse=True),
+        )
 
 
 class Course(Content):
+    title: str = Field(max_length=100)
     description: str = Field(...)
 
     class Config:
         demo = "course"
+        indexes = (ODMIndexModel([("title", ASCENDING)], unique=True),)
 
 
 class Article(Document):

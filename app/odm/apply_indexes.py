@@ -1,4 +1,6 @@
-from .models import db
+from typing import List
+
+from .models import _get_collection_name, db, Document
 
 
 def index_for_a_collection(operation):
@@ -21,6 +23,7 @@ def index_for_a_collection(operation):
     db_indexes = []
     for index in collection.list_indexes():
         temp_val = index.to_dict()
+        # Skip "_id" index since it's create by mongodb system
         if "_id" in temp_val["key"]:
             continue
         temp_val.pop("v", None)
@@ -31,8 +34,10 @@ def index_for_a_collection(operation):
 
     for index in indexes:
         temp_val = index.document
+        # Replace SON object with dict
         temp_val["key"] = temp_val["key"].to_dict()
         new_indexes.append(temp_val)
+        # Store index object for future use
         new_indexes_store[temp_val["name"]] = index
 
     # print(db_indexes)
@@ -79,19 +84,48 @@ def index_for_a_collection(operation):
     return len(new_indexes), len(update_indexes), len(delete_db_indexes)
 
 
+def get_model_indexes(model) -> List:
+    if hasattr(model.Config, "indexes"):
+        return list(model.Config.indexes)
+    return []
+
+
+def get_all_indexes():
+    """
+    First imports all child models of Document since it's the abstract parent model.
+    Then retrieve all the child modules and will try to get indexes inside the Config class.
+    """
+    operations = []
+    for model in Document.__subclasses__():
+        indexes = get_model_indexes(model)
+        if indexes:
+            collection_name, _ = _get_collection_name(model)
+            obj = {"collection_name": collection_name, "create_indexes": indexes}
+            if (
+                hasattr(model.Config, "allow_inheritance")
+                and model.Config.allow_inheritance is True
+            ):
+                """If a model has child model"""
+                for child_model in model.__subclasses__():
+                    indexes += get_model_indexes(child_model)
+            operations.append(obj)
+    return operations
+
+
 def apply_indexes():
-    try:
-        from .indexes import operations
-    except ImportError:
-        raise ImportError(
-            """Run "python -m app.main createindexes" before applyindexes"""
-        )
+    """ Run "python -m app.main applyindexes" to apply and indexes. """
+
+    """First get all indexes from all model."""
+    operations = get_all_indexes()
+
+    """Then excute each indexes operation for each model."""
     new_index, update_index, delete_index = 0, 0, 0
     for operation in operations:
         ne, up, de = index_for_a_collection(operation)
         new_index += ne
         update_index += up
         delete_index += de
+
     print()
     if new_index:
         print(new_index, "index created.")
@@ -102,11 +136,3 @@ def apply_indexes():
     if [new_index, update_index, delete_index] == [0, 0, 0]:
         print("No change detected.")
     print()
-
-
-"""
-RUN "python -m app.main applyindexes" to apply and indexes create by createindexes inside __init__.py
-
-Import operations from __init__.py inside indexes folter.
-Then execute each operations with multiple indexes by a collection.
-"""

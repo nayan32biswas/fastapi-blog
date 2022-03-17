@@ -4,7 +4,7 @@ from bson import ObjectId
 from bson.dbref import DBRef
 
 from pydantic import BaseModel, Field
-from pymongo import IndexModel, DESCENDING
+from pymongo import DESCENDING
 from pymongo.command_cursor import CommandCursor
 from pymongo.cursor import Cursor
 
@@ -234,16 +234,3 @@ class PydanticDBRef(DBRef):
             raise TypeError("Invalid Document Model")
         collection_name, _ = _get_collection_name(v.__class__)
         return DBRef(collection=collection_name, id=v.id)
-
-
-class ODMIndexModel(IndexModel):
-    def __repr__(self) -> str:
-        keys = [(key, value) for key, value in self.document["key"].items()]
-        kwargs_str = ""
-        for key, value in self.document.items():
-            if key == "key":
-                continue
-            if type(value) == str:
-                value = f"'{value}'"
-            kwargs_str += f",{key}={value}"
-        return f"""IndexModel({keys}{kwargs_str})"""

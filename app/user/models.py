@@ -2,9 +2,9 @@ from datetime import datetime
 from typing import List, Optional
 
 from pydantic import Field
-from pymongo import ASCENDING
+from pymongo import ASCENDING, IndexModel
 
-from app.odm.models import ODMIndexModel, Document
+from app.odm.models import Document
 from app.odm.models import ObjectIdStr
 from ..auth.permission import UserRoles
 
@@ -28,10 +28,10 @@ class User(Document):
     class Config:
         collection_name = "user"
         indexes = (
-            ODMIndexModel([("username", ASCENDING)], unique=True),
-            ODMIndexModel([("email", ASCENDING)], unique=True),
-            ODMIndexModel([("last_login", ASCENDING)]),
-            ODMIndexModel(
+            IndexModel([("username", ASCENDING)], unique=True),
+            IndexModel([("email", ASCENDING)], unique=True),
+            IndexModel([("last_login", ASCENDING)]),
+            IndexModel(
                 [("first_name", ASCENDING), ("last_name", ASCENDING)],
                 unique=True,
             ),

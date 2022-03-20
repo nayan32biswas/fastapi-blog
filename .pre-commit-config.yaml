@@ -9,11 +9,11 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
 
-  - repo: local
-    hooks:
-      - id: pytest-check
-        language: system
-        name: Pytest Check
-        entry: docker-compose run --rm api pytest
-        pass_filenames: false
-        always_run: true
+  # - repo: local
+  #   hooks:
+  #     - id: pytest-check
+  #       language: system
+  #       name: Pytest Check
+  #       entry: docker-compose run --rm api pytest
+  #       pass_filenames: false
+  #       always_run: true

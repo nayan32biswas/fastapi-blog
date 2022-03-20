@@ -1,6 +1,8 @@
 from typing import List
 
-from .models import _get_collection_name, db, Document
+from pymongo import IndexModel, ASCENDING
+
+from .models import _get_collection_name, db, Document, INHERITANCE_FIELD_NAME
 
 
 def index_for_a_collection(operation):
@@ -106,6 +108,7 @@ def get_all_indexes():
                 and model.Config.allow_inheritance is True
             ):
                 """If a model has child model"""
+                indexes.append(IndexModel([(INHERITANCE_FIELD_NAME, ASCENDING)]))
                 for child_model in model.__subclasses__():
                     indexes += get_model_indexes(child_model)
             operations.append(obj)

@@ -64,7 +64,7 @@ class Document(BaseModel):
             )
         super().__init__(*args, **kwargs)
 
-    def create(self, get_obj=True) -> Any:
+    def create(self, get_obj=False) -> Any:
         collection_name, child = _get_collection_name(self.__class__)
         data = self.dict(exclude={"id"})
         if child is not None:
@@ -77,7 +77,9 @@ class Document(BaseModel):
             obj = model(**data)
             self.__dict__.update(obj.dict())
             return obj
-        return inserted_id
+        else:
+            self.__dict__.update({"id": inserted_id})
+            return self
 
     def update(self, raw: dict = {}, load_data=False) -> Optional[Any]:
         collection_name, _ = _get_collection_name(self.__class__)

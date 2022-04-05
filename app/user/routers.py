@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 
 from app.auth.dependencies import get_authenticated_user
-from app.auth.firebase_auth import decode_firetoken
+from app.auth.firebase_auth import decode_firetoken, get_or_create_firebase_token
 from app.auth.utils import (
     get_password_hash,
     authenticate_user,
@@ -61,15 +61,15 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     }
 
 
-@router.post("/v1/firebase/")
-async def firebase(
+@router.post("/v1/fauth/")
+async def fauth(
     fire_token: str = Form(...),
 ):
     fire_payload = decode_firetoken(fire_token)
     if fire_payload is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Invalid fire token",
         )
     access_token = create_access_token(data={"uid": fire_payload.get("uid")})
     refresh_token = create_refresh_token(data={"uid": fire_payload.get("uid")})
@@ -78,3 +78,10 @@ async def firebase(
         "access_token": access_token,
         "refresh_token": refresh_token,
     }
+
+
+@router.post("/v1/firebase/create/")
+def create_firebase_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+):
+    return get_or_create_firebase_token(form_data.username, form_data.password)

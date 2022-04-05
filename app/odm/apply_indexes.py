@@ -80,10 +80,18 @@ def index_for_a_collection(operation):
         new_indexes = [
             new_indexes_store[new_index["name"]] for new_index in new_indexes if new_index
         ]
-        collection.create_indexes(new_indexes)
+        try:
+            collection.create_indexes(new_indexes)
+        except Exception as e:
+            print(f'\nProblem arise at \"{operation["collection_name"]}\": {e}\n')
+            raise Exception(str(e))
+
     # TODO: apply action for update_indexes
 
-    return len(new_indexes), len(update_indexes), len(delete_db_indexes)
+    ne, de = len(new_indexes), len(delete_db_indexes)
+    if ne > 0 or de > 0:
+        print(f'Applied for \"{operation["collection_name"]}\": {de} deleted, {ne} added')
+    return ne, de
 
 
 def get_model_indexes(model) -> List:
@@ -116,26 +124,23 @@ def get_all_indexes():
 
 
 def apply_indexes():
-    """ Run "python -m app.main applyindexes" to apply and indexes. """
+    """Run "python -m app.main applyindexes" to apply and indexes."""
 
     """First get all indexes from all model."""
     operations = get_all_indexes()
 
     """Then excute each indexes operation for each model."""
-    new_index, update_index, delete_index = 0, 0, 0
+    new_index, delete_index = 0, 0
     for operation in operations:
-        ne, up, de = index_for_a_collection(operation)
+        ne, de = index_for_a_collection(operation)
         new_index += ne
-        update_index += up
         delete_index += de
 
     print()
-    if new_index:
-        print(new_index, "index created.")
-    if update_index:
-        print(update_index, "index updated.")
     if delete_index:
         print(delete_index, "index deleted.")
-    if [new_index, update_index, delete_index] == [0, 0, 0]:
+    if new_index:
+        print(new_index, "index created.")
+    if [new_index, delete_index] == [0, 0]:
         print("No change detected.")
     print()

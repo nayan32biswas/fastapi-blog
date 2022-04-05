@@ -5,8 +5,6 @@ from bson.dbref import DBRef
 
 from pydantic import BaseModel, Field
 from pymongo import DESCENDING
-from pymongo.command_cursor import CommandCursor
-from pymongo.cursor import Cursor
 
 from .utils import camel_to_snake
 from .connection import get_mongo_client_and_db
@@ -29,6 +27,10 @@ class ObjectIdStr(str):
             return str(v)
         raise TypeError("ObjectId required")
 
+    # @classmethod
+    # def __modify_schema__(cls, field_schema):
+    #     field_schema.update(type="ObjectId")
+
 
 class PydanticObjectId(ObjectId):
     @classmethod
@@ -44,13 +46,42 @@ class PydanticObjectId(ObjectId):
         raise TypeError("Invalid ObjectId required")
 
 
+# class PObjectId(ObjectId):
+#     def __init__(self, oid=None):
+#         if oid is not None:
+#             try:
+#                 oid = ObjectId(oid)
+#             except Exception:
+#                 from fastapi import HTTPException
+#                 raise HTTPException(status_code=400, detail="Invalid ObjectId")
+#         super().__init__(oid)
+
+#     @classmethod
+#     def __get_validators__(cls):
+#         yield cls.validate
+
+#     @classmethod
+#     def validate(cls, v):
+#         if isinstance(v, ObjectId):
+#             return v
+#         elif isinstance(v, str):
+#             try:
+#                 return ObjectId(v)
+#             except Exception:
+#                 from fastapi import HTTPException
+#                 raise HTTPException(status_code=400, detail="Invalid ObjectId")
+#         raise TypeError("Invalid ObjectId required")
+
+
 class Document(BaseModel):
     id: PydanticObjectId = Field(default_factory=ObjectId, alias="_id")
 
     class Config:
+        # Those fields will work as the default value of any child class.
+        orm_mode = True
+        allow_population_by_field_name = True
         collection_name = None
         allow_inheritance = False
-        indexes = []
 
     @classmethod
     def _db(cls) -> str:
@@ -81,7 +112,7 @@ class Document(BaseModel):
             self.__dict__.update({"id": inserted_id})
             return self
 
-    def update(self, raw: dict = {}, load_data=False) -> Optional[Any]:
+    def update(self, raw: dict = {}):
         collection_name, _ = _get_collection_name(self.__class__)
         filter = {"_id": self.id}
         if raw:
@@ -92,23 +123,15 @@ class Document(BaseModel):
             datetime_now = datetime.utcnow()
             updated_data["$set"]["updated_at"] = datetime_now
             self.__dict__.update({"updated_at": datetime_now})
-        if load_data is True:
-            updated = db[collection_name].find_one_and_update(filter, updated_data)
-            if updated:
-                self.__dict__.update(updated)
-                return self
-            else:
-                return None
-        else:
-            updated = db[collection_name].update_one(filter, updated_data)
-            return updated
 
-    def delete(self) -> Optional[Any]:
+        return db[collection_name].update_one(filter, updated_data)
+
+    def delete(self):
         collection_name, _ = _get_collection_name(self.__class__)
         return db[collection_name].delete_one({"_id": self.id})
 
     @classmethod
-    def find(cls, filter: dict = {}, projection: dict = {}) -> Cursor:
+    def find(cls, filter: dict = {}, projection: dict = {}):
         collection_name, child = _get_collection_name(cls)
         if child is not None:
             filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
@@ -117,7 +140,7 @@ class Document(BaseModel):
         return db[collection_name].find(filter)
 
     @classmethod
-    def raw_or_model(cls, data, raw) -> Optional[Any]:
+    def raw_or_model(cls, data, raw):
         if raw:
             return data
         else:
@@ -153,38 +176,38 @@ class Document(BaseModel):
             return None
 
     @classmethod
-    def count_documents(cls, filter: dict = {}, **kwargs) -> int:
+    def count_documents(cls, filter: dict = {}, **kwargs):
         collection_name, child = _get_collection_name(cls)
         if child is not None:
             filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
         return db[collection_name].count_documents(filter, **kwargs)
 
     @classmethod
-    def exists(cls, filter: dict = {}, **kwargs) -> bool:
+    def exists(cls, filter: dict = {}, **kwargs):
         collection_name, child = _get_collection_name(cls)
         if child is not None:
             filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
         return db[collection_name].count_documents(filter, **kwargs, limit=1) >= 1
 
     @classmethod
-    def update_one(cls, filter: dict = {}, data: dict = {}, **kwargs) -> int:
+    def update_one(cls, filter: dict = {}, data: dict = {}, **kwargs):
         collection_name, child = _get_collection_name(cls)
         if child is not None:
             filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
-        result = db[collection_name].update_one(filter, data, **kwargs)
-        return result.matched_count
+        return db[collection_name].update_one(filter, data, **kwargs)
 
     @classmethod
-    def update_many(cls, filter: dict = {}, data: dict = {}, **kwargs) -> int:
+    def update_many(cls, filter: dict = {}, data: dict = {}, **kwargs):
         collection_name, child = _get_collection_name(cls)
         if child is not None:
             filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
-        result = db[collection_name].update_many(filter, data, **kwargs)
-        return result.matched_count
+        return db[collection_name].update_many(filter, data, **kwargs)
 
     @classmethod
-    def aggregate(cls, pipeline: List[Any]) -> CommandCursor:
-        collection_name, _ = _get_collection_name(cls)
+    def aggregate(cls, pipeline: List[Any]):
+        collection_name, child = _get_collection_name(cls)
+        if child is not None:
+            pipeline = [{"$match": {f"{INHERITANCE_FIELD_NAME}": child}}] + pipeline
         return db[collection_name].aggregate(pipeline)
 
     @property

@@ -51,7 +51,7 @@ services:
   redis:
     image: redis:6
     container_name: fastapi_blog_redis
-    restart: unless-stopped
+    # restart: unless-stopped
     networks:
       - fastapi_blog-backend-tier
     volumes:

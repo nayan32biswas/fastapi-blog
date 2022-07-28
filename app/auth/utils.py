@@ -11,7 +11,6 @@ from app.base.config import (
     REFRESH_TOKEN_EXPIRE_DAYS,
 )
 from app.user.models import User
-from app.user.query import get_user
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -26,7 +25,7 @@ def get_password_hash(password):
 
 
 def authenticate_user(username: str, password: str) -> Optional[User]:
-    user = get_user(username=username)
+    user = User.find_one({"username": username})
     if not user:
         return None
     if not verify_password(password, user.password):

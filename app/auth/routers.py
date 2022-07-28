@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.base.query import get_object_or_404
-from app.odm.models import ObjectIdStr
+from app.odm.types import ObjectIdStr
 from app.user.models import User
 from .schemas import (
     Token,
@@ -64,7 +64,7 @@ def create_permission_group(
 @router.get("/api/v1/permission-group/")
 def get_permission_group():
     permission_groups = PermissionGroup.find()
-    return {"results": [PermissionGroup(**pg).dict() for pg in permission_groups]}
+    return {"results": [PermissionGroup.from_orm(pg).dict() for pg in permission_groups]}
 
 
 @router.put("/api/v1/permission-group/{permission_group_id}/")
@@ -80,7 +80,7 @@ def update_permission_group(
 
 @router.delete("/api/v1/permission-group/{permission_group_id}/")
 def delete_permission_group(
-    permission_group_id: str,
+    permission_group_id: ObjectIdStr,
 ):
     permission_group = get_object_or_404(PermissionGroup, id=permission_group_id)
     # User.objects().update(pull__permissions=permission_group.id)
@@ -92,7 +92,7 @@ def delete_permission_group(
 
 @router.post("/api/v1/permission-group/{permission_group_id}/add-users/")
 def add_permission_group_users(
-    permission_group_id: str,
+    permission_group_id: ObjectIdStr,
     data: UsersIn,
 ):
     permission_group = get_object_or_404(PermissionGroup, id=permission_group_id)
@@ -109,7 +109,7 @@ def add_permission_group_users(
 
 @router.post("/api/v1/permission-group/{permission_group_id}/remove-users/")
 def remove_permission_group_users(
-    permission_group_id: str,
+    permission_group_id: ObjectIdStr,
     data: UsersIn,
 ):
     permission_group = get_object_or_404(PermissionGroup, id=permission_group_id)

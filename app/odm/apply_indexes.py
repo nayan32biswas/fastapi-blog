@@ -70,9 +70,6 @@ def index_for_a_collection(operation):
     delete_db_indexes = [val for val in db_indexes if val]
     new_indexes = [val for val in new_indexes if val]
 
-    # print(delete_db_indexes)
-    # print(new_indexes)
-
     for db_index in delete_db_indexes:
         if db_index is not None:
             collection.drop_index(db_index["name"])

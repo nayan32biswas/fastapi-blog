@@ -3,9 +3,9 @@ from typing import List, Optional
 
 from pydantic import Field
 from pymongo import ASCENDING, IndexModel
+from app.odm.types import ObjectIdStr
 
 from app.odm.models import Document
-from app.odm.models import ObjectIdStr
 from ..auth.permission import UserRoles
 
 

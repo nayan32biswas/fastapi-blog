@@ -13,14 +13,14 @@ from fastapi import (
     UploadFile,
 )
 
+from app.odm.types import ObjectIdStr
 
+from ..models import Comment, Post
+from ..schemas import PostListOut, PostDetailsOut
 from app.auth.dependencies import get_authenticated_user, has_post_delete_permission
 from app.base.query import get_object_or_404
 from app.base.utils.file import save_image
 from app.user.models import User
-
-from ..models import Comment, Post
-from ..schemas import PostListOut, PostDetailsOut
 
 
 router = APIRouter()
@@ -65,7 +65,7 @@ def create_post(
 
 @router.put("/api/v1/posts/{post_id}/")
 def update_post(
-    post_id: str,
+    post_id: ObjectIdStr,
     name: str = Form(None),
     description: Optional[str] = Form(None),
     published_at: datetime = Form(None),
@@ -136,7 +136,7 @@ def fetch_posts(
 
 @router.get("/api/v1/posts/{post_id}/")
 def fetch_post_details(
-    post_id: str,
+    post_id: ObjectIdStr,
 ):
     post = get_object_or_404(Post, id=post_id)
     raise NotImplementedError()
@@ -152,7 +152,7 @@ def fetch_post_details(
     status_code=status.HTTP_200_OK,
 )
 def delete_post(
-    post_id: str,
+    post_id: ObjectIdStr,
     user: User = Depends(get_authenticated_user),
 ):
     raise NotImplementedError()

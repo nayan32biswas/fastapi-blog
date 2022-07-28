@@ -1,7 +1,7 @@
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from app.odm.models import ObjectIdStr
+from app.odm.types import ObjectIdStr
 from .permission import PermissionValueChar, PermissionType
 
 
@@ -35,7 +35,7 @@ class PermissionDataType(BaseModel):
 
 
 class PermissionGroupOut(BaseModel):
-    id: Optional[ObjectIdStr] = None
+    id: ObjectIdStr = Field(alias="_id")
     name: str
     active: bool = False
     description: Optional[str] = None
@@ -43,6 +43,7 @@ class PermissionGroupOut(BaseModel):
 
     class Config:
         orm_mode = True
+        allow_population_by_field_name = True
 
 
 class UsersIn(BaseModel):

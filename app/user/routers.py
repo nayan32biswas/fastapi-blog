@@ -10,7 +10,6 @@ from app.auth.utils import (
     create_access_token,
     create_refresh_token,
 )
-from app.user.query import get_user
 from .models import User
 from .schemas import UserBase, UserCreate
 
@@ -25,10 +24,9 @@ async def get_me(user: User = Depends(get_authenticated_user)):
 
 @router.post("/v1/registration/")
 async def registration(new_user: UserCreate):
-    # user = User.objects(
-    #     Q(username=new_user.username) | Q(email=new_user.email)
-    # ).first()
-    user = get_user(or_q={"username": new_user.username, "email": new_user.email})
+    user = User.find_one(
+        {"$or": {"username": new_user.username, "email": new_user.email}}
+    )
     if user is not None:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

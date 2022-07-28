@@ -6,16 +6,15 @@ from fastapi import (
     Form,
     status,
 )
-
 from bson.objectid import ObjectId
 
-
-from app.auth.dependencies import get_authenticated_user
-from app.base.query import get_object_or_404
-from app.user.models import User
+from app.odm.types import ObjectIdStr
 
 from ..models import Comment, EmbeddedComment, Post
 from ..schemas import CommentOut
+from app.auth.dependencies import get_authenticated_user
+from app.base.query import get_object_or_404
+from app.user.models import User
 
 
 router = APIRouter()
@@ -23,7 +22,7 @@ router = APIRouter()
 
 @router.post("/api/v1/posts/{post_id}/", response_model=CommentOut)
 def create_post_comment(
-    post_id: str,
+    post_id: ObjectIdStr,
     description: str = Form(...),
     user: User = Depends(get_authenticated_user),
 ):
@@ -35,8 +34,8 @@ def create_post_comment(
 
 @router.put("/api/v1/posts/{post_id}/{comment_id}/")
 def update_comment(
-    post_id: str,
-    comment_id: str,
+    post_id: ObjectIdStr,
+    comment_id: ObjectIdStr,
     description: str = Form(...),
     user: User = Depends(get_authenticated_user),
 ):
@@ -54,8 +53,8 @@ def update_comment(
     status_code=status.HTTP_200_OK,
 )
 def delete_comment(
-    post_id: str,
-    comment_id: str,
+    post_id: ObjectIdStr,
+    comment_id: ObjectIdStr,
     user: User = Depends(get_authenticated_user),
 ):
     comment = get_object_or_404(
@@ -75,8 +74,8 @@ def delete_comment(
     response_model=CommentOut,
 )
 def create_child_comment(
-    post_id: str,
-    comment_id: str,
+    post_id: ObjectIdStr,
+    comment_id: ObjectIdStr,
     description: str = Form(...),
     user: User = Depends(get_authenticated_user),
 ):
@@ -93,9 +92,9 @@ def create_child_comment(
     response_model=CommentOut,
 )
 def update_child_comment(
-    post_id: str,
-    comment_id: str,
-    child_comment_id: str,
+    post_id: ObjectIdStr,
+    comment_id: ObjectIdStr,
+    child_comment_id: ObjectIdStr,
     content: str = Form(...),
     user: User = Depends(get_authenticated_user),
 ):
@@ -163,9 +162,9 @@ def update_child_comment(
     status_code=status.HTTP_200_OK,
 )
 def delete_child_comment(
-    post_id: str,
-    comment_id: str,
-    child_comment_id: str,
+    post_id: ObjectIdStr,
+    comment_id: ObjectIdStr,
+    child_comment_id: ObjectIdStr,
     user: User = Depends(get_authenticated_user),
 ):
     _ = get_object_or_404(

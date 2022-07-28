@@ -1,11 +1,15 @@
 from datetime import datetime
 from typing import Any, List, Optional, Tuple
+from typing_extensions import Self
 from bson import ObjectId
-from bson.dbref import DBRef
 
 from pydantic import BaseModel, Field
 from pymongo import DESCENDING
+from pymongo.cursor import Cursor
 
+
+from app.odm.fields import PydanticDBRef as _PydanticDBRef
+from app.odm.types import PydanticObjectId as _PydanticObjectId
 from .utils import camel_to_snake
 from .connection import get_mongo_client_and_db
 
@@ -14,67 +18,9 @@ mongo_client, db = get_mongo_client_and_db()
 INHERITANCE_FIELD_NAME = "_cls"
 
 
-class ObjectIdStr(str):
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v):
-        if isinstance(v, str):
-            return v
-        elif isinstance(v, ObjectId):
-            return str(v)
-        raise TypeError("ObjectId required")
-
-    # @classmethod
-    # def __modify_schema__(cls, field_schema):
-    #     field_schema.update(type="ObjectId")
-
-
-class PydanticObjectId(ObjectId):
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v):
-        if isinstance(v, ObjectId):
-            return v
-        elif isinstance(v, str):
-            return ObjectId(v)
-        raise TypeError("Invalid ObjectId required")
-
-
-# class PObjectId(ObjectId):
-#     def __init__(self, oid=None):
-#         if oid is not None:
-#             try:
-#                 oid = ObjectId(oid)
-#             except Exception:
-#                 from fastapi import HTTPException
-#                 raise HTTPException(status_code=400, detail="Invalid ObjectId")
-#         super().__init__(oid)
-
-#     @classmethod
-#     def __get_validators__(cls):
-#         yield cls.validate
-
-#     @classmethod
-#     def validate(cls, v):
-#         if isinstance(v, ObjectId):
-#             return v
-#         elif isinstance(v, str):
-#             try:
-#                 return ObjectId(v)
-#             except Exception:
-#                 from fastapi import HTTPException
-#                 raise HTTPException(status_code=400, detail="Invalid ObjectId")
-#         raise TypeError("Invalid ObjectId required")
-
-
 class Document(BaseModel):
-    id: PydanticObjectId = Field(default_factory=ObjectId, alias="_id")
+    id: _PydanticObjectId = Field(default_factory=ObjectId, alias="_id")
+    v2_id: Optional[int] = None
 
     class Config:
         # Those fields will work as the default value of any child class.
@@ -88,6 +34,11 @@ class Document(BaseModel):
         collection_name, _ = _get_collection_name(cls)
         return collection_name
 
+    @property
+    def ref(self):
+        collection_name, _ = _get_collection_name(self.__class__)
+        return _PydanticDBRef(collection=collection_name, id=self.id)
+
     def __init__(self, *args, **kwargs):
         if type(self) is Document:
             raise Exception(
@@ -95,7 +46,7 @@ class Document(BaseModel):
             )
         super().__init__(*args, **kwargs)
 
-    def create(self, get_obj=False) -> Any:
+    def create(self, get_obj=False) -> Self:
         collection_name, child = _get_collection_name(self.__class__)
         data = self.dict(exclude={"id"})
         if child is not None:
@@ -112,6 +63,112 @@ class Document(BaseModel):
             self.__dict__.update({"id": inserted_id})
             return self
 
+    @classmethod
+    def get_or_create(cls, **kwargs) -> Tuple[Self, bool]:
+        obj = cls.find_last(kwargs)
+        if obj:
+            return obj, False
+        return cls(**kwargs).create(), True
+
+    @classmethod
+    def find_raw(cls, filter: dict = {}, projection: dict = {}) -> Cursor:
+        collection_name, child = _get_collection_name(cls)
+        if child is not None:
+            filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
+        if projection:
+            return db[collection_name].find(filter, projection)
+        return db[collection_name].find(filter)
+
+    @classmethod
+    def find(
+        cls,
+        filter: dict = {},
+        sort: Optional[List[Tuple[str, int]]] = None,
+        skip: Optional[int] = None,
+        limit: Optional[int] = None,
+    ):
+        qs = cls.find_raw(filter)
+        if sort:
+            qs = qs.sort(sort)
+        if skip:
+            qs = qs.skip(skip)
+        if limit:
+            qs = qs.limit(limit)
+
+        model_childs = {}
+        is_dynamic_model = False
+        if (
+            hasattr(cls.Config, "allow_inheritance")
+            and cls.Config.allow_inheritance is True
+        ):
+            is_dynamic_model = True
+            for model in cls.__subclasses__():
+                _, child = _get_collection_name(model)
+                model_childs[child] = model
+
+        for data in qs:
+            if is_dynamic_model and data[INHERITANCE_FIELD_NAME] in model_childs:
+                yield model_childs[data[INHERITANCE_FIELD_NAME]](**data)
+            else:
+                yield cls(**data)
+
+    @classmethod
+    def find_one(
+        cls, filter: dict = {}, sort: Optional[List[Tuple[str, int]]] = None
+    ) -> Optional[Self]:
+        qs = cls.find_raw(filter)
+        if sort:
+            qs = qs.sort(sort)
+        for data in qs.limit(1):
+            """limit 1 is equivalent to find_one and that is implemented in pymongo find_one"""
+            return cls(**data)
+        return None
+
+    @classmethod
+    def find_first(
+        cls, filter: dict = {}, sort: Optional[List[Tuple[str, int]]] = None
+    ) -> Optional[Self]:
+        return cls.find_one(filter, sort=sort)
+
+    @classmethod
+    def find_last(
+        cls,
+        filter: dict = {},
+        sort: Optional[List[Tuple[str, int]]] = [("_id", DESCENDING)],
+    ) -> Optional[Self]:
+        return cls.find_one(filter, sort=sort)
+
+    @classmethod
+    def count_documents(cls, filter: dict = {}, **kwargs) -> int:
+        collection_name, child = _get_collection_name(cls)
+        if child is not None:
+            filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
+        return db[collection_name].count_documents(filter, **kwargs)
+
+    @classmethod
+    def exists(cls, filter: dict = {}, **kwargs) -> Any:
+        collection_name, child = _get_collection_name(cls)
+        if child is not None:
+            filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
+        return db[collection_name].count_documents(filter, **kwargs, limit=1) >= 1
+
+    @classmethod
+    def aggregate(cls, pipeline: List[Any]):
+        collection_name, child = _get_collection_name(cls)
+        if child is not None:
+            pipeline = [{"$match": {f"{INHERITANCE_FIELD_NAME}": child}}] + pipeline
+        return db[collection_name].aggregate(pipeline)
+
+    @classmethod
+    def get_random_one(cls, filter: dict = {}):
+        collection_name, child = _get_collection_name(cls)
+        if child is not None:
+            filter[INHERITANCE_FIELD_NAME] = child
+        pipeline = [{"$match": filter}, {"$sample": {"size": 1}}]
+        for each in db[collection_name].aggregate(pipeline):
+            return each
+        return None
+
     def update(self, raw: dict = {}):
         collection_name, _ = _get_collection_name(self.__class__)
         filter = {"_id": self.id}
@@ -126,71 +183,8 @@ class Document(BaseModel):
 
         return db[collection_name].update_one(filter, updated_data)
 
-    def delete(self):
-        collection_name, _ = _get_collection_name(self.__class__)
-        return db[collection_name].delete_one({"_id": self.id})
-
     @classmethod
-    def find(cls, filter: dict = {}, projection: dict = {}):
-        collection_name, child = _get_collection_name(cls)
-        if child is not None:
-            filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
-        if projection:
-            return db[collection_name].find(filter, projection)
-        return db[collection_name].find(filter)
-
-    @classmethod
-    def raw_or_model(cls, data, raw):
-        if raw:
-            return data
-        else:
-            return cls(**data)
-
-    @classmethod
-    def find_first(cls, filter: dict = {}, raw=False) -> Optional[Any]:
-        collection_name, child = _get_collection_name(cls)
-        if child is not None:
-            filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
-        for data in db[collection_name].find(filter).limit(1):
-            return cls.raw_or_model(data, raw)
-        return None
-
-    @classmethod
-    def find_last(cls, filter: dict = {}, raw=False) -> Optional[Any]:
-        collection_name, child = _get_collection_name(cls)
-        if child is not None:
-            filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
-        for data in db[collection_name].find(filter).sort("_id", DESCENDING).limit(1):
-            return cls.raw_or_model(data, raw)
-        return None
-
-    @classmethod
-    def find_one(cls, filter: dict, raw=False) -> Optional[Any]:
-        collection_name, child = _get_collection_name(cls)
-        if child is not None:
-            filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
-        data = db[collection_name].find_one(filter)
-        if data:
-            return cls.raw_or_model(data, raw)
-        else:
-            return None
-
-    @classmethod
-    def count_documents(cls, filter: dict = {}, **kwargs):
-        collection_name, child = _get_collection_name(cls)
-        if child is not None:
-            filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
-        return db[collection_name].count_documents(filter, **kwargs)
-
-    @classmethod
-    def exists(cls, filter: dict = {}, **kwargs):
-        collection_name, child = _get_collection_name(cls)
-        if child is not None:
-            filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
-        return db[collection_name].count_documents(filter, **kwargs, limit=1) >= 1
-
-    @classmethod
-    def update_one(cls, filter: dict = {}, data: dict = {}, **kwargs):
+    def update_one(cls, filter: dict = {}, data: dict = {}, **kwargs) -> Any:
         collection_name, child = _get_collection_name(cls)
         if child is not None:
             filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
@@ -203,17 +197,16 @@ class Document(BaseModel):
             filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
         return db[collection_name].update_many(filter, data, **kwargs)
 
+    def delete(self):
+        collection_name, _ = _get_collection_name(self.__class__)
+        return db[collection_name].delete_one({"_id": self.id})
+
     @classmethod
-    def aggregate(cls, pipeline: List[Any]):
+    def delete_many(cls, filter: dict = {}):
         collection_name, child = _get_collection_name(cls)
         if child is not None:
-            pipeline = [{"$match": {f"{INHERITANCE_FIELD_NAME}": child}}] + pipeline
-        return db[collection_name].aggregate(pipeline)
-
-    @property
-    def ref(self):
-        collection_name, _ = _get_collection_name(self.__class__)
-        return PydanticDBRef(collection=collection_name, id=self.id)
+            filter = {f"{INHERITANCE_FIELD_NAME}": child, **filter}
+        return db[collection_name].delete_many(filter)
 
 
 def convert_model_to_collection(model: Any) -> str:
@@ -246,16 +239,4 @@ def _get_collection_name(model: Any) -> Tuple[str, Optional[str]]:
         return convert_model_to_collection(model), None
 
 
-class PydanticDBRef(DBRef):
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v):
-        if isinstance(v, DBRef):
-            return v
-        if not issubclass(v.__class__, Document) or not hasattr(v, "id"):
-            raise TypeError("Invalid Document Model")
-        collection_name, _ = _get_collection_name(v.__class__)
-        return DBRef(collection=collection_name, id=v.id)
+__all__ = ["INHERITANCE_FIELD_NAME", "Document"]

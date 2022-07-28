@@ -1,19 +1,20 @@
 from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, Field
+from app.odm.types import ObjectIdStr
 
-from app.odm.models import ObjectIdStr
 from app.user.schemas import MinimalUser
 
 
 class EmbedeComment(BaseModel):
-    id: ObjectIdStr
+    id: ObjectIdStr = Field(alias="_id")
     user: MinimalUser
     description: str
     created_at: datetime
 
     class Config:
         orm_mode = True
+        allow_population_by_field_name = True
 
 
 class BaseComment(BaseModel):
@@ -21,13 +22,14 @@ class BaseComment(BaseModel):
 
 
 class CommentOut(BaseComment):
-    id: ObjectIdStr
+    id: ObjectIdStr = Field(alias="_id")
     user: MinimalUser
     childs: Optional[List[EmbedeComment]]
     created_at: datetime
 
     class Config:
         orm_mode = True
+        allow_population_by_field_name = True
 
 
 class BasePost(BaseModel):
@@ -42,18 +44,20 @@ class PostForm(BasePost):
 
 
 class PostListOut(BasePost):
-    id: ObjectIdStr
+    id: ObjectIdStr = Field(alias="_id")
     user: MinimalUser
 
     class Config:
         orm_mode = True
+        allow_population_by_field_name = True
 
 
 class PostDetailsOut(BasePost):
-    id: ObjectIdStr
+    id: ObjectIdStr = Field(alias="_id")
     description: str
     comments: Optional[List[CommentOut]]
     # user: MinimalUser
 
     class Config:
         orm_mode = True
+        allow_population_by_field_name = True

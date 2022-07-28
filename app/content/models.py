@@ -4,8 +4,8 @@ from typing import Optional
 from pydantic import Field
 from pymongo import ASCENDING, IndexModel
 
-from app.odm.models import Document, PydanticDBRef
-from app.odm.models import PydanticObjectId
+from app.odm.types import PydanticObjectId
+from app.odm.models import Document
 
 
 class Content(Document):
@@ -36,5 +36,5 @@ class Course(Content):
 
 
 class Article(Document):
-    content: PydanticDBRef = Field(...)
+    content: PydanticObjectId = Field(...)
     description: str = Field(...)

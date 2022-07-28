@@ -23,7 +23,7 @@ async def create_course(
 ):
 
     course = Course(
-        added_by_id=user.id, name="Demo Name", description="Demo Content"
+        added_by_id=user.id, name="Demo Name", description="Demo Content", title="Demo"
     ).create()
     print(course)
     return "Course Added"
@@ -34,7 +34,7 @@ async def create_article(
     user: User = Depends(get_authenticated_user),
 ):
     content = Content(added_by_id=user.id, name="Name1").create()
-    article = Article(content=content, description="Demo Content").create()
+    article = Article(content=content.id, description="Demo Content").create()
     print(article)
     return "Article Added"
 

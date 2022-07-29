@@ -65,7 +65,7 @@ async def get_article():
             {"$addFields": {"content": {"$objectToArray": "$$ROOT.content"}}},
             {
                 "$lookup": {
-                    "from": Content._db(),
+                    "from": Content._get_collection_name(),
                     "localField": "content.1.v",
                     "foreignField": "_id",
                     "as": "content",

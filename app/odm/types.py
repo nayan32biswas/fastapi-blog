@@ -8,16 +8,15 @@ class ObjectIdStr(str):
 
     @classmethod
     def validate(cls, v):
-        if isinstance(v, str):
-            return v
-        elif isinstance(v, ObjectId):
+        if isinstance(v, ObjectId):
             return str(v)
+        elif isinstance(v, str):
+            try:
+                ObjectId(v)
+            except Exception:
+                raise TypeError("Invalid ObjectId")
+            return v
         raise TypeError("ObjectId required")
-
-    @classmethod
-    def __modify_schema__(cls, field_schema):
-        field_schema.update(format="ObjectId")
-        # field_schema.update(type="ObjectId")
 
 
 class PydanticObjectId(ObjectId):

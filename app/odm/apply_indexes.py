@@ -2,10 +2,13 @@ from typing import List
 
 from pymongo import IndexModel, ASCENDING
 
-from .models import _get_collection_name, db, Document, INHERITANCE_FIELD_NAME
+from app.odm.connection import get_db
+
+from .models import Document, INHERITANCE_FIELD_NAME
 
 
 def index_for_a_collection(operation):
+    db = get_db()
     """
     First get all incexes for a collection and match with operation.
     Remove full match object.
@@ -80,14 +83,14 @@ def index_for_a_collection(operation):
         try:
             collection.create_indexes(new_indexes)
         except Exception as e:
-            print(f'\nProblem arise at \"{operation["collection_name"]}\": {e}\n')
+            print(f'\nProblem arise at "{operation["collection_name"]}": {e}\n')
             raise Exception(str(e))
 
     # TODO: apply action for update_indexes
 
     ne, de = len(new_indexes), len(delete_db_indexes)
     if ne > 0 or de > 0:
-        print(f'Applied for \"{operation["collection_name"]}\": {de} deleted, {ne} added')
+        print(f'Applied for "{operation["collection_name"]}": {de} deleted, {ne} added')
     return ne, de
 
 
@@ -106,8 +109,10 @@ def get_all_indexes():
     for model in Document.__subclasses__():
         indexes = get_model_indexes(model)
         if indexes:
-            collection_name, _ = _get_collection_name(model)
-            obj = {"collection_name": collection_name, "create_indexes": indexes}
+            obj = {
+                "collection_name": model._get_collection_name(),
+                "create_indexes": indexes,
+            }
             if (
                 hasattr(model.Config, "allow_inheritance")
                 and model.Config.allow_inheritance is True

@@ -6,6 +6,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.base import routers as base_routers
 from app.auth import routers as auth_routers
+from app.odm.connection import connect, disconnect
 from app.user import routers as user_routers
 from app.post import routers as post_routers
 from app.content import routers as content_routers
@@ -24,19 +25,12 @@ config.init_firebase_auth()
 
 @app.on_event("startup")
 async def startup_db_client():
-    # from app.odm.connection import get_mongo_client_and_db
-    # app.mongo_client, app.db = get_mongo_client_and_db()
-    pass
+    connect(config.DB_URL)
 
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
-    # from app.odm.models import db
-    # db.mongo_client.close()
-
-    from app.odm.models import mongo_client
-
-    mongo_client.close()
+    disconnect()
 
 
 app.include_router(base_routers.router, tags=["default"])

@@ -2,7 +2,6 @@ from pymongo import MongoClient
 
 from app.base import config
 
-
 _connection = {}
 
 
@@ -19,13 +18,21 @@ def _get_connection_client(url: str):
 
 
 def connect(url: str = ""):
+    if "client" in _connection:
+        return _connection["client"]
     _connection["url"] = url
     _connection["client"] = _get_connection_client(url)
 
 
 def disconnect():
     _connection["client"].close()
+    del _connection["client"]
 
 
 def get_db():
+    if not _connection or "client" not in _connection:
+        if "url" in _connection:
+            connect(_connection["url"])
+        else:
+            raise Exception("DB connection is not provided")
     return _connection["client"].get_database()

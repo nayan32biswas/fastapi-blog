@@ -12,8 +12,8 @@ from ..auth.permission import UserRoles
 class User(Document):
     username: str = Field(...)
     email: str = Field(...)
-    first_name: str = Field(...)
-    last_name: str = Field(...)
+    first_name: Optional[str] = Field(default=None)
+    last_name: Optional[str] = Field(default=None)
 
     is_active: bool = True
     date_joined: datetime = Field(default_factory=datetime.utcnow)
@@ -22,7 +22,7 @@ class User(Document):
     permissions: List[ObjectIdStr] = []
 
     last_login: datetime = Field(default_factory=datetime.utcnow)
-    password: str = Field(...)
+    password: Optional[str] = Field(default=None)
     image: Optional[str] = Field(default=None)
 
     class Config:
@@ -30,7 +30,6 @@ class User(Document):
         indexes = (
             IndexModel([("username", ASCENDING)], unique=True),
             IndexModel([("email", ASCENDING)], unique=True),
-            IndexModel([("last_login", ASCENDING)]),
             IndexModel(
                 [("first_name", ASCENDING), ("last_name", ASCENDING)],
                 unique=True,

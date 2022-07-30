@@ -25,7 +25,7 @@ def get_password_hash(password):
 
 
 def authenticate_user(username: str, password: str) -> Optional[User]:
-    user = User.find_one({"username": username})
+    user = User.get_one({"username": username})
     if not user:
         return None
     if not verify_password(password, user.password):

@@ -5,4 +5,4 @@
 
 ## CLI
 
-`python -m app.main.py --help`
+`docker-compose run --rm api python -m app.main --help`

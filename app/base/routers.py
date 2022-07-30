@@ -9,7 +9,7 @@ from app.base.utils.file import save_image
 from app.auth.schemas import Token
 from . import ws_router
 
-# from app.user.models import User
+from app.user.models import User  # noqa
 
 
 router = APIRouter()
@@ -19,13 +19,14 @@ router.include_router(ws_router.router)
 
 @router.get("/", status_code=status.HTTP_200_OK)
 def home():
+    print(User.get_one({"email": "loadtest@gmail.com"}))
     return {"message": "Hello World"}
 
 
 @router.post("/upload-image/")
 async def create_upload_image(
     image: UploadFile = File(...),
-    _: Token = Depends(get_authenticated_token),
+    user: Token = Depends(get_authenticated_token),
 ):
     image_path = save_image(image, folder="image")
     return image_path

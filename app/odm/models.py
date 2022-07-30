@@ -1,12 +1,14 @@
 from datetime import datetime
-from typing import Any, List, Optional, Tuple
+from typing import Any, Iterator, List, Optional, Tuple
 from typing_extensions import Self
 from bson import ObjectId
 
 from pydantic import BaseModel, Field
 from pymongo import DESCENDING
 from pymongo.cursor import Cursor
-
+from pymongo.command_cursor import CommandCursor
+from pymongo.results import UpdateResult
+from pymongo.collection import Collection
 
 from app.odm.fields import PydanticDBRef as _PydanticDBRef
 from app.odm.types import PydanticObjectId as _PydanticObjectId
@@ -15,6 +17,39 @@ from .connection import get_db
 
 
 INHERITANCE_FIELD_NAME = "_cls"
+
+
+class Object:
+    def from_list(self, values) -> List[Any]:
+        temp = []
+        for v in values:
+            if isinstance(v, dict):
+                temp.append(Object(**v))
+            elif isinstance(v, list) or isinstance(v, tuple):
+                temp.append(self.from_list(v))
+            else:
+                temp.append(v)
+        return temp
+
+    def __init__(self, **kwargs) -> None:
+        self.__dict__.update(kwargs)
+        for k, v in kwargs.items():
+            if isinstance(v, dict):
+                # setattr(self, k, Object(**v))
+                self.__dict__[k] = Object(**v)
+            elif isinstance(v, list) or isinstance(v, tuple):
+                # setattr(self, k, self.from_list(v))
+                self.__dict__[k] = self.from_list(v)
+            else:
+                # setattr(self, k, v)
+                self.__dict__[k] = v
+
+    def __repr__(self) -> str:
+        items = ("{}={!r}".format(k, self.__dict__[k]) for k in self.__dict__)
+        return "{}({})".format(type(self).__name__, ", ".join(items))
+
+    def __eq__(self, other) -> bool:
+        return self.__dict__ == other.__dict__
 
 
 class Document(BaseModel):
@@ -28,12 +63,16 @@ class Document(BaseModel):
         collection_name = None
         allow_inheritance = False
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         if type(self) is Document:
             raise Exception(
                 "Document is an abstract class and cannot be instantiated directly"
             )
         super().__init__(*args, **kwargs)
+
+    def __setattr__(self, key, value) -> None:
+        """Add '# type: ignore' as a comment if get type error while getting this value"""
+        self.__dict__[key] = value
 
     @property
     def ref(self):
@@ -41,13 +80,13 @@ class Document(BaseModel):
         return _PydanticDBRef(collection=collection_name, id=self.id)
 
     @classmethod
-    def _get_child(cls):
+    def _get_child(cls) -> Optional[str]:
         if not hasattr(cls, "_collection_name") or cls._collection_name is None:
             cls._collection_name = cls._get_collection_name()
         return cls._child
 
     @classmethod
-    def _get_collection_name(cls):
+    def _get_collection_name(cls) -> str:
         if not hasattr(cls, "_collection_name") or cls._collection_name is None:
             model: Any = cls
             if model.__base__ != Document:
@@ -67,7 +106,7 @@ class Document(BaseModel):
         return cls._collection_name
 
     @classmethod
-    def _get_collection(cls):
+    def _get_collection(cls) -> Collection:
         if not hasattr(cls, "_collection") or cls._collection is None:
             db = get_db()
             cls._collection = db[cls._get_collection_name()]
@@ -82,7 +121,7 @@ class Document(BaseModel):
 
         inserted_id = _collection.insert_one(data).inserted_id
         if get_obj is True:
-            data: Any = _collection.find_one({"_id": inserted_id})
+            data: Any = _collection.get_one({"_id": inserted_id})
             model = self.__class__
             obj = model(**data)
             self.__dict__.update(obj.dict())
@@ -114,7 +153,7 @@ class Document(BaseModel):
         sort: Optional[List[Tuple[str, int]]] = None,
         skip: Optional[int] = None,
         limit: Optional[int] = None,
-    ):
+    ) -> Iterator[Self]:
         qs = cls.find_raw(filter)
         if sort:
             qs = qs.sort(sort)
@@ -140,22 +179,16 @@ class Document(BaseModel):
                 yield cls(**data)
 
     @classmethod
-    def find_one(
+    def get_one(
         cls, filter: dict = {}, sort: Optional[List[Tuple[str, int]]] = None
     ) -> Optional[Self]:
         qs = cls.find_raw(filter)
         if sort:
             qs = qs.sort(sort)
         for data in qs.limit(1):
-            """limit 1 is equivalent to find_one and that is implemented in pymongo find_one"""
+            """limit 1 is equivalent to get_one and that is implemented in pymongo get_one"""
             return cls(**data)
         return None
-
-    @classmethod
-    def find_first(
-        cls, filter: dict = {}, sort: Optional[List[Tuple[str, int]]] = None
-    ) -> Optional[Self]:
-        return cls.find_one(filter, sort=sort)
 
     @classmethod
     def find_last(
@@ -163,7 +196,7 @@ class Document(BaseModel):
         filter: dict = {},
         sort: Optional[List[Tuple[str, int]]] = [("_id", DESCENDING)],
     ) -> Optional[Self]:
-        return cls.find_one(filter, sort=sort)
+        return cls.get_one(filter, sort=sort)
 
     @classmethod
     def count_documents(cls, filter: dict = {}, **kwargs) -> int:
@@ -180,7 +213,7 @@ class Document(BaseModel):
         return _collection.count_documents(filter, **kwargs, limit=1) >= 1
 
     @classmethod
-    def aggregate(cls, pipeline: List[Any]):
+    def aggregate(cls, pipeline: List[Any]) -> CommandCursor:
         _collection = cls._get_collection()
         if cls._get_child() is not None:
             pipeline = [
@@ -189,16 +222,16 @@ class Document(BaseModel):
         return _collection.aggregate(pipeline)
 
     @classmethod
-    def get_random_one(cls, filter: dict = {}):
+    def get_random(cls, filter: dict = {}, n=1) -> Optional[Self]:
         _collection = cls._get_collection()
         if cls._get_child() is not None:
             filter[INHERITANCE_FIELD_NAME] = cls._get_child()
-        pipeline = [{"$match": filter}, {"$sample": {"size": 1}}]
+        pipeline = [{"$match": filter}, {"$sample": {"size": n}}]
         for each in _collection.aggregate(pipeline):
-            return each
+            return cls(**each)
         return None
 
-    def update(self, raw: dict = {}):
+    def update(self, raw: dict = {}) -> UpdateResult:
         _collection = self._get_collection()
         filter = {"_id": self.id}
         if raw:
@@ -209,11 +242,10 @@ class Document(BaseModel):
             datetime_now = datetime.utcnow()
             updated_data["$set"]["updated_at"] = datetime_now
             self.__dict__.update({"updated_at": datetime_now})
-
         return _collection.update_one(filter, updated_data)
 
     @classmethod
-    def update_one(cls, filter: dict = {}, data: dict = {}, **kwargs) -> Any:
+    def update_one(cls, filter: dict = {}, data: dict = {}, **kwargs) -> UpdateResult:
         _collection = cls._get_collection()
         if cls._get_child() is not None:
             filter = {f"{INHERITANCE_FIELD_NAME}": cls._get_child(), **filter}

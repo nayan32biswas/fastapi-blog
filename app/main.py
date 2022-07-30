@@ -26,11 +26,13 @@ config.init_firebase_auth()
 @app.on_event("startup")
 async def startup_db_client():
     connect(config.DB_URL)
+    print("db connected")
 
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
     disconnect()
+    print("db disconnected")
 
 
 app.include_router(base_routers.router, tags=["default"])
@@ -54,7 +56,11 @@ app.add_middleware(BaseHTTPMiddleware, dispatch=add_process_time_header)
 
 
 if __name__ == "__main__":
-    """CLI"""
-    from app.cli import cli_app
+    try:
+        """CLI"""
+        from app.cli import cli_app
 
-    cli_app()
+        connect(config.DB_URL)
+        cli_app()
+    finally:
+        disconnect()

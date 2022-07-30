@@ -41,7 +41,7 @@ async def get_authenticated_token(token: str = Depends(oauth2_scheme)):
 async def get_authenticated_user(
     token_data: TokenData = Depends(get_authenticated_token),
 ):
-    user = User.find_one({"username": token_data.username})
+    user = User.get_one({"username": token_data.username})
     if user is None:
         raise credentials_exception
     if user.is_active is False:
@@ -51,7 +51,7 @@ async def get_authenticated_user(
 
 async def get_admin_user(token_data: TokenData = Depends(get_authenticated_token)):
     # user = User.objects(username=token_data.username, role=UserRoles.ADMIN).first()
-    user = User.find_one({"username": token_data.username, "role": UserRoles.ADMIN})
+    user = User.get_one({"username": token_data.username, "role": UserRoles.ADMIN})
     if user is None:
         raise credentials_exception
     if user.is_active is False:

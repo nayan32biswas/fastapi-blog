@@ -24,7 +24,7 @@ async def get_me(user: User = Depends(get_authenticated_user)):
 
 @router.post("/v1/registration/")
 async def registration(new_user: UserCreate):
-    user = User.find_one(
+    user = User.get_one(
         {"$or": {"username": new_user.username, "email": new_user.email}}
     )
     if user is not None:
